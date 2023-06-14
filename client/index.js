@@ -30,6 +30,7 @@ module.exports = class Client extends events.EventEmitter {
 		}, opts.pool);
 
 		this.status = 'disconnected';
+		this.timer = null;
 		this.pool = new mssql.ConnectionPool(this.getConnectionConfigs());
 
 		this.pool.on('error', (e) => {
@@ -72,9 +73,16 @@ module.exports = class Client extends events.EventEmitter {
 			.catch((e) => {
 
 				// Reconnecting
-				setTimeout(() => {
+				this.timer = setTimeout(() => {
+
+					this.emit('reconnect')
 					this.connect();
 				}, 3000);
 			});
+	}
+
+	disconnect() {
+		clearTimeout(this.timer);
+		this.pool.drain();
 	}
 };

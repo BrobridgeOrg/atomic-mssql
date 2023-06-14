@@ -11,7 +11,7 @@
     "atomic"
   ],
   "author": "Fred Chien <fred@brobridge.com>",
-  "license": "MIT",
+  "license": "APL",
   "node-red": {
     "nodes": {
       "mssql-connection": "mssql-connection.js",

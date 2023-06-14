@@ -23,7 +23,7 @@ module.exports = function (RED) {
 			requestTimeout: Number(n.requestTimeout) || 15000,
 			auth: {
 				type: n.authType || 'default',
-				username: this.credentials.username || '',
+				username: this.credentials.username || 'sa',
 				password: this.credentials.password || ''
 			},
 		};
@@ -74,6 +74,10 @@ module.exports = function (RED) {
 		this.getPool = function() {
 			return node.client.getPool();
 		};
+
+		node.on('close', function() {
+			node.client.disconnect();
+		})
 	}
 
 	RED.nodes.registerType('MSSQL Connection', MSSQLConnectionNode, {

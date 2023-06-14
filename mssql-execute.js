@@ -23,7 +23,11 @@ module.exports = function(RED) {
 		this.tpl = sanitizedCmd(node.config.command) || '';
 
 		if (!this.connection) {
-			setStatus(node, 'disconnected');
+			node.status({
+				fill: 'red',
+				shape: 'ring',
+				text: 'disconnected'
+			});
 			return;
 		}
 
