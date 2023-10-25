@@ -167,6 +167,9 @@
 
 				$('#node-playground-result-table').empty();
 
+				// Getting token information from local storage
+				let tokenInfo = JSON.parse(localStorage.getItem('auth-tokens'));
+
 				$.ajax({
 					method: 'POST',
 					dataType: 'json',
@@ -175,6 +178,9 @@
 					data: {
 						connection: node.connection,
 						query: playgroundEditor.getValue()
+					},
+					headers: {
+						Authorization: 'Bearer ' + tokenInfo.access_token,
 					},
 					success: function(data) {
 						$('#node-playground-result-message').hide().empty();
