@@ -167,8 +167,14 @@
 
 				$('#node-playground-result-table').empty();
 
+				let headers = {}
+
 				// Getting token information from local storage
-				let tokenInfo = JSON.parse(localStorage.getItem('auth-tokens'));
+				let authInfo = localStorage.getItem('auth-tokens');
+				if (authInfo != null) {
+					let tokenInfo = JSON.parse(localStorage.getItem('auth-tokens'));
+					headers.Authorization = 'Bearer ' + tokenInfo.access_token;
+				}
 
 				$.ajax({
 					method: 'POST',
@@ -179,9 +185,7 @@
 						connection: node.connection,
 						query: playgroundEditor.getValue()
 					},
-					headers: {
-						Authorization: 'Bearer ' + tokenInfo.access_token,
-					},
+					headers: headers,
 					success: function(data) {
 						$('#node-playground-result-message').hide().empty();
 
