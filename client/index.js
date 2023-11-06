@@ -15,6 +15,7 @@ module.exports = class Client extends events.EventEmitter {
 				database: '',
 				requestTimeout: 15000,
 				connectionTimeout: 15000,
+				connectionRetryInterval: 3000,
 			}, opts.connection, {
 				auth: Object.assign({
 					type: 'default',
@@ -49,9 +50,10 @@ module.exports = class Client extends events.EventEmitter {
 			pool: this.poolOpts,
 			user: this.opts.auth.username || '',
 			password: this.opts.auth.password || '',
-			requestTimeout: 15000,
-			connectionTimeout: 15000,
 			options: {
+				requestTimeout: this.opts.requestTimeout,
+				connectionTimeout: this.opts.connectionTimeout,
+				connectionRetryInterval: this.opts.connectionRetryInterval,
 				trustServerCertificate: true,
 				maxRetriesOnTransientErrors: 0
 			}
@@ -77,7 +79,7 @@ module.exports = class Client extends events.EventEmitter {
 
 					this.emit('reconnect')
 					this.connect();
-				}, 3000);
+				}, this.opts.connectionRetryInterval);
 			});
 	}
 
