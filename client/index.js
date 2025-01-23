@@ -1,7 +1,5 @@
 const events = require('events');
 const util = require('util');
-const tedious = require('tedious');
-const ConnectionPool = require('tedious-connection-pool');
 const mssql = require('mssql');
 
 module.exports = class Client extends events.EventEmitter {

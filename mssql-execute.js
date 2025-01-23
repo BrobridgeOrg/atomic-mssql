@@ -12,15 +12,18 @@ module.exports = function(RED) {
 		return raw.replaceAll('\`', '\\\`');
 	}
 
-    function ExecuteNode(config) {
-        RED.nodes.createNode(this, config);
+  function ExecuteNode(config) {
+    RED.nodes.createNode(this, config);
 
-        var node = this;
+    var node = this;
 		this.connection = RED.nodes.getNode(config.connection)
 		this.config = config;
 		this.config.outputPropType = config.outputPropType || 'msg';
 		this.config.outputProp = config.outputProp || 'payload';
 		this.tpl = sanitizedCmd(node.config.command) || '';
+
+    this.config.maxbatchrecords = parseInt(config.maxbatchrecords) || 100;
+    this.config.stream = (config.deliveryMethod == 'streaming') ? true : false;
 
 		if (!this.connection) {
 			node.status({
@@ -46,53 +49,96 @@ module.exports = function(RED) {
 				tpl = sanitizedCmd(msg.query);
 			}
 
-			try {
-				node.status({
-					fill: 'blue',
-					shape: 'dot',
-					text: 'requesting'
-				});
+      node.status({
+        fill: 'blue',
+        shape: 'dot',
+        text: 'requesting'
+      });
 
-				let request = pool.request();
-				let rs = await request.query.apply(request, genQueryCmdParameters(tpl, msg));
+      // Prparing request
+      let err = null;
+      let rows = [];
+      let request = pool.request();
+      request.stream = true
 
-				node.status({
-					fill: 'green',
-					shape: 'dot',
-					text: 'done'
-				});
+      request.on('row', (row) => {
+
+        rows.push(row);
+
+        // not streaming
+        if (!node.config.stream)
+          return;
+
+        if (rows.length < node.config.maxbatchrecords)
+          return;
+
+				if (node.config.outputPropType == 'msg') {
+          let m = Object.assign({}, msg);
+					m[node.config.outputProp] = {
+						results: rows,
+						rowsAffected: rows.length,
+            done: false,
+					}
+
+          node.status({
+            fill: 'blue',
+            shape: 'dot',
+            text: 'streaming'
+          });
+
+          node.send(m);
+				}
+
+        // Reset buffer
+        rows = [];
+      });
+
+      request.on('done', (returnedValue) => {
+
+        if (err) {
+          node.error(err);
+          done(err);
+          return;
+        }
+
+        node.status({
+          fill: 'green',
+          shape: 'dot',
+          text: 'done'
+        });
 
 				// Preparing result
 				if (node.config.outputPropType == 'msg') {
 					msg[node.config.outputProp] = {
-						results: rs.recordset || [],
-						rowsAffected: rs.rowsAffected,
+						results: rows,
+						rowsAffected: returnedValue.rowsAffected,
+            done: true,
 					}
 				}
 
 				node.send(msg);
 
-				done();
-			} catch(e) {
-				node.status({
-					fill: 'red',
-					shape: 'ring',
-					text: e.toString()
-				});
+        done();
+      });
 
-				node.send({
-					error: e
-				})
+      request.on('error', (e) => {
+        err = e;
 
-				console.log(e.code);
+        node.status({
+          fill: 'red',
+          shape: 'ring',
+          text: err.toString()
+        });
 
-				done(e);
-			}
+      });
+
+      // Execute SQL command
+      request.query(genQueryCmdParameters(tpl, msg));
 		});
 
 		node.on('close', async () => {
 		});
-    }
+  }
 
 	// Admin API
 	const api = require('./apis');
