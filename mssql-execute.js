@@ -132,8 +132,18 @@ module.exports = function(RED) {
 
       });
 
+      let sql = null;
+      try {
+        sql = genQueryCmdParameters(tpl, msg);
+      } catch(e) {
+        node.error(e);
+        done();
+        return
+      }
+
       // Execute SQL command
-      request.query(genQueryCmdParameters(tpl, msg));
+      request.query.apply(request, sql);
+
 		});
 
 		node.on('close', async () => {
