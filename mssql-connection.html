@@ -1,72 +1,76 @@
 <script type="text/javascript">
-    RED.nodes.registerType('MSSQL Connection',{
-        category: 'config',
-		credentials: {
-            username: {
-				type: 'text'
-			},
-            password: {
-				type: 'password'
-			},
-		},
-        defaults: {
-            name: {
-				value: '',
-			},
-            server: {
-				value: 'localhost',
-				required: true
-			},
-            port: {
-				value: 1433,
-				required: true,
-				validate: RED.validators.number()
-			},
-            authType: {
-				value: 'default',
-			},
-            domain: {
-				value: '',
-			},
-            database: {
-				value: '',
-				required: true
-			},
-			poolMin: {
-				value: 1,
-				required: true
-			},
-			poolMax: {
-				value: 10,
-				required: true
-			},
-			poolIdleTimeoutMillis: {
-				value: 30000,
-				required: true
-			},
-			requestTimeout: {
-				value: 15000,
-				required: true
-			},
-			connectionTimeout: {
-				value: 15000,
-				required: true
-			},
-			connectionRetryInterval: {
-				value: 3000,
-				required: true
-			}
-        },
-        label: function() {
-            return this.name || this.server + ':' + this.port + ' - ' + this.database;
-        },
-		oneditprepare: function() {
-			$('#node-config-input-requestTimeout').val(this.requestTimeout || 15000);
-			$('#node-config-input-connectionTimeout').val(this.connectionTimeout || 15000);
-			$('#node-config-input-poolIdleTimeoutMillis').val(this.poolIdleTimeoutMillis || 30000);
-			$('#node-config-input-connectionRetryInterval').val(this.connectionRetryInterval || 3000);
-		}
-    });
+  RED.nodes.registerType('MSSQL Connection',{
+    category: 'config',
+    credentials: {
+      username: {
+        type: 'text'
+      },
+      password: {
+        type: 'password'
+      },
+    },
+    defaults: {
+      name: {
+        value: '',
+      },
+      server: {
+        value: 'localhost',
+        required: true
+      },
+      port: {
+        value: 1433,
+        required: true,
+        validate: RED.validators.number()
+      },
+      authType: {
+        value: 'default',
+      },
+      domain: {
+        value: '',
+      },
+      database: {
+        value: '',
+        required: true
+      },
+      appName: {
+        value: 'atomic',
+        required: true
+      },
+      poolMin: {
+        value: 1,
+        required: true
+      },
+      poolMax: {
+        value: 10,
+        required: true
+      },
+      poolIdleTimeoutMillis: {
+        value: 30000,
+        required: true
+      },
+      requestTimeout: {
+        value: 15000,
+        required: true
+      },
+      connectionTimeout: {
+        value: 15000,
+        required: true
+      },
+      connectionRetryInterval: {
+        value: 3000,
+        required: true
+      }
+    },
+    label: function() {
+      return this.name || this.server + ':' + this.port + ' - ' + this.database;
+    },
+    oneditprepare: function() {
+      $('#node-config-input-requestTimeout').val(this.requestTimeout || 15000);
+      $('#node-config-input-connectionTimeout').val(this.connectionTimeout || 15000);
+      $('#node-config-input-poolIdleTimeoutMillis').val(this.poolIdleTimeoutMillis || 30000);
+      $('#node-config-input-connectionRetryInterval').val(this.connectionRetryInterval || 3000);
+    }
+  });
 </script>
 
 <script type="text/x-red" data-template-name="MSSQL Connection">
@@ -103,6 +107,10 @@
     <div class="form-row">
         <label for="node-config-input-database" style="width: 130px"><i class="fa fa-database"></i> Database</label>
         <input type="text" id="node-config-input-database">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-appName" style="width: 130px"><i class="fa fa-rocket"></i> App Name</label>
+        <input type="text" id="node-config-input-appName">
     </div>
 	<hr />
 	<div class="form-row">
