@@ -53,6 +53,7 @@ module.exports = class Client extends events.EventEmitter {
 				connectionTimeout: this.opts.connectionTimeout,
 				connectionRetryInterval: this.opts.connectionRetryInterval,
 				trustServerCertificate: true,
+        appName: this.opts.appName,
 				maxRetriesOnTransientErrors: 0
 			}
 		};

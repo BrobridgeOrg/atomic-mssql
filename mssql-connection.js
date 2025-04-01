@@ -19,6 +19,7 @@ module.exports = function (RED) {
 			port: Number(n.port),
 			domain: n.domain,
 			database: n.database,
+      appName: n.appName || 'atomic',
 			connectionTimeout: Number(n.connectionTimeout) || 15000,
 			requestTimeout: Number(n.requestTimeout) || 15000,
 			connectionRetryInterval: Number(n.connectionRetryInterval) || 3000,
