@@ -1,6 +1,6 @@
 {
   "name": "atomic-mssql",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "description": "MSSQL module for Brobridge Atomic",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
