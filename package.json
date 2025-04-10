@@ -15,7 +15,8 @@
   "node-red": {
     "nodes": {
       "mssql-connection": "mssql-connection.js",
-      "mssql-execute": "mssql-execute.js"
+      "mssql-execute": "mssql-execute.js",
+      "mssql-control": "mssql-control.js"
     }
   },
   "dependencies": {

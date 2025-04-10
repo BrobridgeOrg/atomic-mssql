@@ -84,12 +84,12 @@ module.exports = function (RED) {
 
 	RED.nodes.registerType('MSSQL Connection', MSSQLConnectionNode, {
 		credentials: {
-            username: {
-				type: 'text'
-			},
-            password: {
-				type: 'password'
-			}
+      username: {
+        type: 'text'
+      },
+      password: {
+        type: 'password'
+      }
 		}
 	})
 }

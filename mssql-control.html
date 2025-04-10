@@ -1,0 +1,86 @@
+<script type="text/javascript">
+  RED.nodes.registerType('MSSQL Control', {
+    category: 'Database',
+    color: '#88bb00',
+    defaults: {
+      name: { value: "" },
+      targetNodeId: { value: "" },
+      action: { value: "continue" },
+    },
+    inputs: 1,
+    outputs: 0,
+    icon: 'db.png',
+    label: function() {
+      return this.name || "MSSQL Control";
+    },
+    oneditprepare: function() {
+      let node = this;
+
+      // Get the list of available MSSQL Execute nodes
+	    $.getJSON('/nodes/atomic-mssql/apis/mssql-execute-nodes', function(data) {
+        let targetNodeField = $("#node-input-targetNodeId");
+        targetNodeField.empty();
+
+        // Add the default option
+        targetNodeField.append($("<option></option>")
+          .attr("value", "")
+          .text("Auto Detect"));
+
+        // Add the available nodes
+        data.forEach(function(n) {
+
+          let displayName = n.name;
+          if (displayName) {
+            displayName += ' (' + n.id + ')';
+          } else {
+            displayName = n.id;
+          }
+
+          targetNodeField.append($("<option></option>")
+            .attr("value", n.id)
+            .text(displayName)
+            .attr("selected", node.targetNodeId === n.id));
+        });
+      });
+    }
+  });
+</script>
+
+<script type="text/x-red" data-template-name="MSSQL Control">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-targetNodeId"><i class="fa fa-cube"></i> Target Node</label>
+        <select type="text" id="node-input-targetNodeId"></select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-action"><i class="fa fa-play"></i> Action</label>
+        <select type="text" id="node-input-action">
+          <option value="continue">Continue</option>
+          <option value="break">Break</option>
+        </select>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="MSSQL Control">
+  <p>The MSSQL Control node is a powerful tool for managing the flow of data from MS-SQL Execute nodes. It allows you to pause and resume the processing of large datasets in a controlled manner, optimizing performance and reducing memory consumption.</p>
+
+  <p>It is particularly useful when the <code>"Delivery Mode"</code> is set to <code>"streaming"</code> in the MS-SQL Execute node. The control node interacts with the Execute node to manage the flow of data.</p>
+
+  <h3>Actions</h3>
+  <p>To use this node, you need to specify the target Execute node and the action you want to perform, then select action to control data flow. The available actions are <code>"continue"</code> and <code>"break"</code>. The <code>"continue"</code> action resumes the processing of the paused stream, while the "break" action stops the processing.</p>
+
+<ul>
+  <li>
+    <h4>continue</h4>
+    <p>When the <code>"continue"</code> action is selected, you can also specify the session ID (<code>msg.sessionId</code>) of the paused session. This allows you to control multiple sessions independently.</p>
+  </li>
+  <li>
+    <h4>break</h4>
+
+    <p>When the <code>"break"</code> action is selected, the Control node will stop processing the session and release any resources associated with it. This is useful when you want to stop processing a stream of the session that is no longer needed.</p>
+  </li>
+</ul>
+</script>

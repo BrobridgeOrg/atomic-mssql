@@ -34,6 +34,30 @@ module.exports = function(RED) {
 			return;
 		}
 
+    this.sessionCounter = 0;
+    this.sessions = {};
+    this.next = (sessionId) => {
+      let session = this.sessions[sessionId];
+      if (!session) {
+        this.error(`Session ${sessionId} not found`);
+        return;
+      }
+
+      session.resume();
+    };
+
+    this.close = (sessionId) => {
+      let session = this.sessions[sessionId];
+      if (!session) {
+        this.error(`Session ${sessionId} not found`);
+        return;
+      }
+
+      session.cancel();
+
+      delete this.sessions[sessionId];
+    };
+
 		node.on('input', async (msg, send, done) => {
 
 			if (node.config.querySource === 'dynamic' && !msg.query)
@@ -61,6 +85,10 @@ module.exports = function(RED) {
       let request = pool.request();
       request.stream = true
 
+      // Register session
+      let sessionId = ++this.sessionCounter;
+      this.sessions[sessionId] = request;
+
       request.on('row', (row) => {
 
         rows.push(row);
@@ -72,12 +100,15 @@ module.exports = function(RED) {
         if (rows.length < node.config.maxbatchrecords)
           return;
 
+        request.pause();
+
 				if (node.config.outputPropType == 'msg') {
           let m = Object.assign({}, msg);
+          m.sessionId = sessionId;
 					m[node.config.outputProp] = {
 						results: rows,
 						rowsAffected: rows.length,
-            done: false,
+            complete: false,
 					}
 
           node.status({
@@ -87,10 +118,10 @@ module.exports = function(RED) {
           });
 
           node.send(m);
-				}
 
-        // Reset buffer
-        rows = [];
+          // Reset buffer
+          rows = [];
+				}
       });
 
       request.on('done', (returnedValue) => {
@@ -112,16 +143,29 @@ module.exports = function(RED) {
 					msg[node.config.outputProp] = {
 						results: rows,
 						rowsAffected: returnedValue.rowsAffected,
-            done: true,
+            complete: true,
 					}
 				}
 
 				node.send(msg);
 
+        // Reset buffer
+        rows = [];
+
         done();
+
+        delete this.sessions[sessionId];
       });
 
       request.on('error', (e) => {
+
+        // Reset buffer
+        rows = [];
+
+        if (e.code == 'ECANCEL') {
+          return;
+        }
+
         err = e;
 
         node.status({
@@ -130,6 +174,7 @@ module.exports = function(RED) {
           text: err.toString()
         });
 
+        delete this.sessions[sessionId];
       });
 
       let sql = null;
@@ -147,15 +192,22 @@ module.exports = function(RED) {
 		});
 
 		node.on('close', async () => {
+
+      for (let sessionId in this.sessions) {
+        let session = this.sessions[sessionId];
+        session.cancel();
+      }
+
+      this.sessions = {};
 		});
   }
 
-	// Admin API
-	const api = require('./apis');
-	api.init(RED);
+  // Admin API
+  const api = require('./apis');
+  api.init(RED);
 
-    RED.nodes.registerType('MSSQL Execute', ExecuteNode, {
-		credentials: {
-		}
-	});
+  RED.nodes.registerType('MSSQL Execute', ExecuteNode, {
+    credentials: {
+    }
+  });
 }
