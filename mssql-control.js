@@ -10,23 +10,41 @@ module.exports = function(RED) {
     node.targetNodeId = config.targetNodeId;
 
     node.on('input', function(msg, send, done) {
-      // Getting the sessionId from the message
-      const sessionId = msg[config.outputProp]?.sessionId || msg.sessionId;
 
-      if (!sessionId) {
+      if (!(msg.sessions instanceof Array)) {
         if (done)
           done();
 
         return;
       }
 
-      // Find the target node by ID or sessionId
-      const targetNode = node.targetNodeId ?
-        RED.nodes.getNode(node.targetNodeId) :
-        findNodeBySessionId(sessionId);
+      let targetNode = node.targetNodeId ? RED.nodes.getNode(node.targetNodeId) : null;
+      let sessionId = null;
+      let targetSession = null;
+      if (targetNode) {
 
-      if (!targetNode) {
-        node.error(`Not found target node ${node.targetNodeId || "auto find failed"}`, msg);
+        // Find session from target node
+        targetSession = msg.sessions.find(session => {
+          sessionId = session;
+          return targetNode.sessions[session];
+        });
+
+      } else {
+
+        // Find the target node by session
+        targetSession = msg.sessions.find(session => {
+          targetNode = findNodeBySessionId(session);
+          if (!targetNode) {
+            return false;
+          }
+
+          sessionId = session;
+          return targetNode.sessions[session];
+        })
+      }
+
+      if (!targetSession) {
+        node.warn(`No available session`);
         if (done)
           done();
 
@@ -34,7 +52,6 @@ module.exports = function(RED) {
       }
 
       // Check if the stream is already completed
-      const targetSession = targetNode.sessions[sessionId];
       if (targetSession.isCompleted) {
         node.warn(`The session ${sessionId} is already completed, no need to continue`);
 
@@ -79,7 +96,7 @@ module.exports = function(RED) {
       // Traverse all nodes to find the MS-SQL Execute node with the given sessionId
       RED.nodes.eachNode(function(eachNode) {
         const node = RED.nodes.getNode(eachNode.id);
-        if (node && node.sessions&& node.sessions[sessionId]) {
+        if (node && node.sessions && node.sessions[sessionId]) {
           targetNode = node;
           return false; // Stop traversing
         }

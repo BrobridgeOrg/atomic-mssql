@@ -86,7 +86,7 @@ module.exports = function(RED) {
       request.stream = true
 
       // Register session
-      let sessionId = ++this.sessionCounter;
+      let sessionId = node.id + '-' + Date.now() + '-' + ++this.sessionCounter;
       this.sessions[sessionId] = request;
 
       request.on('row', (row) => {
@@ -104,7 +104,12 @@ module.exports = function(RED) {
 
 				if (node.config.outputPropType == 'msg') {
           let m = Object.assign({}, msg);
-          m.sessionId = sessionId;
+          if (m.sessions instanceof Array) {
+            m.sessions.push(sessionId);
+          } else {
+            m.sessions = [ sessionId ];
+          }
+
 					m[node.config.outputProp] = {
 						results: rows,
 						rowsAffected: rows.length,
@@ -149,6 +154,16 @@ module.exports = function(RED) {
 
 				node.send(msg);
 
+        // Find session to remove from msg.sessions
+        let index = -1;
+        if (msg.sessions instanceof Array) {deliveryMethod
+          index = msg.sessions.indexOf(sessionId);
+        }
+
+        if (index > -1) {
+          msg.sessions.splice(index, 1);
+        }
+
         // Reset buffer
         rows = [];
 
@@ -158,6 +173,16 @@ module.exports = function(RED) {
       });
 
       request.on('error', (e) => {
+
+        // Find session to remove from msg.sessions
+        let index = -1;
+        if (msg.sessions instanceof Array) {deliveryMethod
+          index = msg.sessions.indexOf(sessionId);
+        }
+
+        if (index > -1) {
+          msg.sessions.splice(index, 1);
+        }
 
         // Reset buffer
         rows = [];
