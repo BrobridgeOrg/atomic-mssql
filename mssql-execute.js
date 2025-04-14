@@ -12,10 +12,10 @@ module.exports = function(RED) {
 		return raw.replaceAll('\`', '\\\`');
 	}
 
-    function ExecuteNode(config) {
-        RED.nodes.createNode(this, config);
+	function ExecuteNode(config) {
+		RED.nodes.createNode(this, config);
 
-        var node = this;
+		var node = this;
 		this.connection = RED.nodes.getNode(config.connection)
 		this.config = config;
 		this.config.outputPropType = config.outputPropType || 'msg';
@@ -39,6 +39,18 @@ module.exports = function(RED) {
 			let pool = node.connection.getPool();
 			if (!pool)
 				return;
+
+			if (!pool.connected) {
+				node.status({ fill: 'yellow', shape: 'ring', text: 'connecting...' });
+				try {
+					await pool.connect();
+				} catch(e) {
+					console.error('[MSSQL Connect Error]', e.stack);
+					node.status({ fill: 'red', shape: 'ring', text: e.toString() });
+					done(e);
+					return;
+				}
+			}
 
 			let tpl = node.tpl;
 			if (msg.query) {
@@ -74,17 +86,23 @@ module.exports = function(RED) {
 
 				done();
 			} catch(e) {
+				console.error('[MSSQL Query Error Stack]', e.stack);
+				
 				node.status({
 					fill: 'red',
 					shape: 'ring',
 					text: e.toString()
 				});
 
-				node.send({
-					error: e
-				})
-
-				console.log(e.code);
+				msg.error = {
+					code: e.code,
+					lineNumber: e.lineNumber,
+					message: e.message,
+					name: e.name,
+					number: e.number,
+				};
+				
+				node.send(msg);
 
 				done(e);
 			}
@@ -92,13 +110,13 @@ module.exports = function(RED) {
 
 		node.on('close', async () => {
 		});
-    }
+	}
 
 	// Admin API
 	const api = require('./apis');
 	api.init(RED);
 
-    RED.nodes.registerType('MSSQL Execute', ExecuteNode, {
+	RED.nodes.registerType('MSSQL Execute', ExecuteNode, {
 		credentials: {
 		}
 	});
