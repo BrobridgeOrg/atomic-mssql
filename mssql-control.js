@@ -7,7 +7,8 @@ module.exports = function(RED) {
     node.action = config.action || 'continue';
 
     // Target MS-SQL Execute Node ID
-    node.targetNodeId = config.targetNodeId;
+    node.selectMode = config.selectMode || 'auto';
+    node.selectedNodes = config.selectedNodes || [];
 
     node.on('input', function(msg, send, done) {
 
@@ -18,91 +19,62 @@ module.exports = function(RED) {
         return;
       }
 
-      let targetNode = node.targetNodeId ? RED.nodes.getNode(node.targetNodeId) : null;
-      let sessionId = null;
-      let targetSession = null;
-      if (targetNode) {
-
-        // Find session from target node
-        targetSession = msg.sessions.find(session => {
-          sessionId = session;
-          return targetNode.sessions[session];
-        });
-
-      } else {
-
-        // Find the target node by session
-        targetSession = msg.sessions.find(session => {
-          targetNode = findNodeBySessionId(session);
-          if (!targetNode) {
-            return false;
-          }
-
-          sessionId = session;
-          return targetNode.sessions[session];
-        })
-      }
-
-      if (!targetSession) {
-        node.warn(`No available session`);
-        if (done)
-          done();
-
-        return;
-      }
-
-      // Check if the stream is already completed
-      if (targetSession.isCompleted) {
-        node.warn(`The session ${sessionId} is already completed, no need to continue`);
-
-        if (done)
-          done();
-
-        return;
-      }
-
-      switch(node.action) {
-      case 'continue':
-        // call function to continue
-        if (typeof targetNode.next === 'function') {
-          targetNode.next(sessionId);
-
-          if (done)
-            done();
-        }
-        break;
-      case 'break':
-        // call function to close session
-        if (typeof targetNode.close === 'function') {
-          targetNode.close(sessionId);
-
-          if (done)
-            done();
-        }
-        break;
-      default:
-        node.error(`Unknown action ${node.action}`, msg);
-        if (done)
-          done();
-
-        return;
-      }
-
-    });
-
-    function findNodeBySessionId(sessionId) {
-      let targetNode = null;
-
-      // Traverse all nodes to find the MS-SQL Execute node with the given sessionId
-      RED.nodes.eachNode(function(eachNode) {
-        const node = RED.nodes.getNode(eachNode.id);
-        if (node && node.sessions && node.sessions[sessionId]) {
-          targetNode = node;
-          return false; // Stop traversing
-        }
+      // Handling multiple sessions
+      let selectedNodes = (msg.selectMode == 'auto') ? [] : node.selectedNodes;
+      msg.sessions.forEach(sessionId => {
+        handleSession(selectedNodes, node.action, sessionId);
       });
 
-      return targetNode;
+      if (done) {
+        done();
+      }
+    });
+
+    function handleSession(allowedNodes, action, sessionId) {
+
+      // get first part of the sessionId as target node id
+      let index = sessionId.indexOf('-');
+      if (index === -1) {
+        return null;
+      }
+
+      let targetNodeId = sessionId.substring(0, index);
+
+      // Check if the target node is in the allowed nodes list
+      if (allowedNodes.length > 0 && allowedNodes.indexOf(targetNodeId) === -1) {
+        // disallowed
+        return null;
+      }
+
+      // Getting the target node by id
+      let targetNode = RED.nodes.getNode(targetNodeId);
+      if (!targetNode) {
+        return null;
+      }
+
+      // Check if the sessionId is valid for the target node
+      let session = targetNode.sessions[sessionId];
+      if (!session) {
+        return null;
+      }
+
+      // Perform action based on the node's action property
+      switch(action) {
+        case 'continue':
+          // call function to continue
+          if (typeof targetNode.next === 'function') {
+            targetNode.next(sessionId);
+          }
+          break;
+        case 'break':
+          // call function to close session
+          if (typeof targetNode.close === 'function') {
+            targetNode.close(sessionId);
+          }
+          break;
+        default:
+          node.error(`Unknown action ${node.action}`, msg);
+      }
     }
   }
 

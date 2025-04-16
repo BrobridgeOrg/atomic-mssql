@@ -49,7 +49,6 @@ module.exports = function(RED) {
     this.close = (sessionId) => {
       let session = this.sessions[sessionId];
       if (!session) {
-        this.error(`Session ${sessionId} not found`);
         return;
       }
 

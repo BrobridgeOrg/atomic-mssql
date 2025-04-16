@@ -5,6 +5,8 @@
     defaults: {
       name: { value: "" },
       targetNodeId: { value: "" },
+      selectMode: { value: "auto" },
+      selectedNodes: { value: [] },
       action: { value: "continue" },
     },
     inputs: 1,
@@ -16,32 +18,152 @@
     oneditprepare: function() {
       let node = this;
 
-      // Get the list of available MSSQL Execute nodes
-	    $.getJSON('/nodes/atomic-mssql/apis/mssql-execute-nodes', function(data) {
-        let targetNodeField = $("#node-input-targetNodeId");
-        targetNodeField.empty();
-
-        // Add the default option
-        targetNodeField.append($("<option></option>")
-          .attr("value", "")
-          .text("Auto Detect"));
-
-        // Add the available nodes
-        data.forEach(function(n) {
-
-          let displayName = n.name;
-          if (displayName) {
-            displayName += ' (' + n.id + ')';
+      var scope = node.selectedNodes || [];
+      this._resize = function() {
+        var rows = $("#dialog-form>div:not(.node-input-target-list-row)");
+        var height = $("#dialog-form").height();
+        for (var i=0;i<rows.length;i++) {
+          height -= $(rows[i]).outerHeight(true);
+        }
+        var editorRow = $("#dialog-form>div.node-input-target-list-row");
+        editorRow.css("height",height+"px");
+      };
+      var search = $("#node-input-status-target-filter").searchBox({
+        style: "compact",
+        delay: 300,
+        change: function() {
+          var val = $(this).val().trim().toLowerCase();
+          if (val === "") {
+            dirList.treeList("filter", null);
+            search.searchBox("count","");
           } else {
-            displayName = n.id;
+            var count = dirList.treeList("filter", function(item) {
+              return item.label.toLowerCase().indexOf(val) > -1 || item.node.type.toLowerCase().indexOf(val) > -1
+            });
+            search.searchBox("count",count+" / "+candidateNodes.length);
           }
+        }
+      });
 
-          targetNodeField.append($("<option></option>")
-            .attr("value", n.id)
-            .text(displayName)
-            .attr("selected", node.targetNodeId === n.id));
+      var dirList = $("#node-input-status-target-container-div").css({width: "100%", height: "100%"})
+        .treeList({multi:true}).on("treelistitemmouseover", function(e, item) {
+          item.node.highlighted = true;
+          item.node.dirty = true;
+          RED.view.redraw();
+        }).on("treelistitemmouseout", function(e, item) {
+          item.node.highlighted = false;
+          item.node.dirty = true;
+          RED.view.redraw();
+        })
+      var candidateNodes = RED.nodes.filterNodes({z:node.z, type: "MSSQL Execute"});
+      var allChecked = true;
+      var items = [];
+      var nodeItemMap = {};
+
+      candidateNodes.forEach(function(n) {
+        if (n.id === node.id) {
+          return;
+        }
+        var isChecked = scope.indexOf(n.id) !== -1;
+
+        allChecked = allChecked && isChecked;
+
+        var nodeDef = RED.nodes.getType(n.type);
+        var label;
+        var sublabel;
+        if (nodeDef) {
+          var l = nodeDef.label;
+          label = (typeof l === "function" ? l.call(n) : l)||"";
+          sublabel = n.type;
+          if (sublabel.indexOf("subflow:") === 0) {
+            var subflowId = sublabel.substring(8);
+            var subflow = RED.nodes.subflow(subflowId);
+            sublabel = "subflow : "+subflow.name;
+          }
+        }
+        if (!nodeDef || !label) {
+          label = n.type;
+        }
+        nodeItemMap[n.id] = {
+          node: n,
+          label: label,
+          sublabel: sublabel,
+          selected: isChecked,
+          checkbox: true
+        };
+        items.push(nodeItemMap[n.id]);
+      });
+      dirList.treeList('data',items);
+
+      $("#node-input-targetNodes-select").on("click", function(e) {
+        e.preventDefault();
+        var preselected = dirList.treeList('selected').map(function(n) {return n.node.id});
+        RED.tray.hide();
+        RED.view.selectNodes({
+          selected: preselected,
+          onselect: function(selection) {
+            RED.tray.show();
+            var newlySelected = {};
+            selection.forEach(function(n) {
+              newlySelected[n.id] = true;
+              if (nodeItemMap[n.id]) {
+                nodeItemMap[n.id].treeList.select(true);
+              }
+            })
+            preselected.forEach(function(id) {
+              if (!newlySelected[id]) {
+                nodeItemMap[id].treeList.select(false);
+              }
+            })
+          },
+          oncancel: function() {
+            RED.tray.show();
+          },
+          filter: function(n) {
+
+            if (n.type === "MSSQL Execute" && n.id !== node.id) {
+              return true;
+            }
+
+            return false;
+          }
         });
       });
+
+      $("#node-input-selectMode").on("change", function(e) {
+        var selectMode = $(this).val();
+        if (selectMode === "specific") {
+          $(".node-input-target-row").show();
+        } else {
+          $(".node-input-target-row").hide();
+        }
+        node._resize();
+      });
+
+      switch(this.selectMode) {
+      case 'specific':
+        $("#node-input-selectMode").val("specific");
+        break;
+      default:
+        $("#node-input-selectMode").val("auto");
+      }
+
+      $("#node-input-selectMode").trigger("change");
+    },
+    oneditsave: function() {
+      var selectMode = $("#node-input-selectMode").val();
+      switch(selectMode) {
+      case 'specific':
+        this.selectedNodes = $("#node-input-status-target-container-div").treeList('selected').map(function(i) {
+          return i.node.id;
+        })
+        break;
+      default:
+        this.selectedNodes = [];
+      }
+    },
+    oneditresize: function(size) {
+      this._resize();
     }
   });
 </script>
@@ -52,15 +174,25 @@
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
-        <label for="node-input-targetNodeId"><i class="fa fa-cube"></i> Target Node</label>
-        <select type="text" id="node-input-targetNodeId"></select>
-    </div>
-    <div class="form-row">
         <label for="node-input-action"><i class="fa fa-play"></i> Action</label>
         <select type="text" id="node-input-action">
           <option value="continue">Continue</option>
           <option value="break">Break</option>
         </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-selectMode"><i class="fa fa-cube"></i> Target Node</label>
+        <select id="node-input-selectMode">
+            <option value="auto">Auto Select</option>
+            <option value="specific">Specific Nodes</option>
+        </select>
+    </div>
+    <div class="form-row node-input-target-row">
+        <button type="button" id="node-input-targetNodes-select" class="red-ui-button">從畫面上選擇節點</button>
+    </div>
+    <div class="form-row node-input-target-row node-input-target-list-row" style="position: relative; min-height: 100px">
+        <div style="position: absolute; top: -30px; right: 0;"><input type="text" id="node-input-status-target-filter"></div>
+        <div id="node-input-status-target-container-div"></div>
     </div>
 </script>
 
