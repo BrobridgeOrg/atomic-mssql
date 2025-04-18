@@ -12,10 +12,12 @@ module.exports = function(RED) {
 		return raw.replaceAll('\`', '\\\`');
 	}
 
-  function ExecuteNode(config) {
-    RED.nodes.createNode(this, config);
 
-    var node = this;
+	function ExecuteNode(config) {
+		RED.nodes.createNode(this, config);
+
+		var node = this;
+
 		this.connection = RED.nodes.getNode(config.connection)
 		this.config = config;
 		this.config.outputPropType = config.outputPropType || 'msg';
@@ -65,6 +67,18 @@ module.exports = function(RED) {
 			let pool = node.connection.getPool();
 			if (!pool)
 				return;
+
+			if (!pool.connected) {
+				node.status({ fill: 'yellow', shape: 'ring', text: 'connecting...' });
+				try {
+					await pool.connect();
+				} catch(e) {
+					console.error('[MSSQL Connect Error]', e.stack);
+					node.status({ fill: 'red', shape: 'ring', text: e.toString() });
+					done(e);
+					return;
+				}
+			}
 
 			let tpl = node.tpl;
 			if (msg.query) {
@@ -155,7 +169,7 @@ module.exports = function(RED) {
 
         // Find session to remove from msg.sessions
         let index = -1;
-        if (msg.sessions instanceof Array) {deliveryMethod
+        if (msg.sessions instanceof Array) {
           index = msg.sessions.indexOf(sessionId);
         }
 
@@ -212,7 +226,6 @@ module.exports = function(RED) {
 
       // Execute SQL command
       request.query.apply(request, sql);
-
 		});
 
 		node.on('close', async () => {
@@ -224,14 +237,14 @@ module.exports = function(RED) {
 
       this.sessions = {};
 		});
-  }
+	}
 
   // Admin API
   const api = require('./apis');
   api.init(RED);
 
-  RED.nodes.registerType('MSSQL Execute', ExecuteNode, {
-    credentials: {
-    }
-  });
+	RED.nodes.registerType('MSSQL Execute', ExecuteNode, {
+		credentials: {
+		}
+	});
 }
