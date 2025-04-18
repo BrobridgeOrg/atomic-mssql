@@ -24,6 +24,14 @@
 			command: {
 				value: ''
 			},
+			deliveryMethod: {
+				value: 'direct',
+				required: true
+			},
+			maxbatchrecords: {
+				value: 100,
+				required: true
+			},
 			outputPropType: {
 				value: 'msg'
 			},
@@ -40,6 +48,22 @@
 		oneditprepare: function() {
 
 			let node = this;
+
+			// Delivery methods
+			function updateDeliveryMethods() {
+				switch($('#node-input-deliveryMethod').val()) {
+				case 'streaming':
+					$('#node-row-streaming').show();
+					break;
+				default:
+					$('#node-row-streaming').hide();
+				}
+			}
+
+      updateDeliveryMethods();
+      $("#node-input-deliveryMethod").on("change", function() {
+        updateDeliveryMethods();
+      });
 
 			// Tabs
 			var tabs = RED.tabs.create({
@@ -104,9 +128,9 @@
 				}
 			}
 
-            $("#node-input-querySource").on("change", function() {
-				updateQuerySourceOptions();
-            });
+      $("#node-input-querySource").on("change", function() {
+        updateQuerySourceOptions();
+      });
 
 			if (!this.querySource) {
 				this.querySource = 'auto';
@@ -352,64 +376,79 @@
 
     <div class="form-row">
         <label for="node-input-outputProp" style="width: 130px"><i class="fa fa-sign-out"></i> Output Property</label>
-		<input type="text" id="node-input-typed-outputProp">
+        <input type="text" id="node-input-typed-outputProp">
         <input type="hidden" id="node-input-outputPropType">
         <input type="hidden" id="node-input-outputProp">
     </div>
 
-    <div class="form-row func-tabs-row">
-        <ul style="min-width: 600px; margin-bottom: 20px;" id="func-tabs"></ul>
+    <div class="form-row">
+      <label for="node-input-deliveryMethod" style="width: 130px"><i class="fa fa-check-circle"></i> Delivery Method</label>
+      <select id="node-input-deliveryMethod" style='width:70%'>
+        <option value="direct">Return results directly</option>
+        <option value="streaming">Streaming</option>
+      </select>
+      <div id="node-row-streaming" style="margin-left: 30px; margin-top: 10px;" class="hide">
+        <div class="form-row">
+          <label for="node-input-maxbatchrecords"><i class="fa fa-stack-exchange"></i> Max Records</label>
+          <input type="text" id="node-input-maxbatchrecords" style="width:100px" placeholder="100"> of a batch
+        </div>
+      </div>
     </div>
 
-    <div id="func-tabs-content" style="min-height: calc(100% - 150px); position: relative;">
+        <div class="form-row func-tabs-row">
+            <ul style="min-width: 600px; margin-bottom: 20px;" id="func-tabs"></ul>
+        </div>
 
-        <div id="func-tab-config" style="display:none">
-			<div class="form-row">
-				<label for="node-input-querySource" style="width: 130px"><i class="fa fa-code"></i> Query Source</label>
-				<select id="node-input-querySource" style='width:70%'>
-					<option value="auto">Auto</option>
-					<option value="static">Static SQL Command</option>
-					<option value="dynamic">From msg.query</option>
-				</select>
+        <div id="func-tabs-content" style="min-height: calc(100% - 150px); position: relative;">
 
-				<div style="float: right;position: relative;margin-top: 9px; padding: 5px;">
-					<button id="node-query-expand" class="editor-button editor-button-small" title="Expand query editor"><i class="fa fa-expand"></i></button>
-				</div>
+            <div id="func-tab-config" style="display:none">
+          <div class="form-row">
+            <label for="node-input-querySource" style="width: 130px"><i class="fa fa-code"></i> Query Source</label>
+            <select id="node-input-querySource" style='width:70%'>
+              <option value="auto">Auto</option>
+              <option value="static">Static SQL Command</option>
+              <option value="dynamic">From msg.query</option>
+            </select>
 
-				<div id="node-row-command" style="margin-top: 10px;">
-					<div class="form-row">
-						<div style="height: 250px; min-height:150px;" class="node-text-editor" id="node-input-command-editor"></div>
-					</div>
-				</div>
-			</div>
+            <div style="float: right;position: relative;margin-top: 9px; padding: 5px;">
+              <button id="node-query-expand" class="editor-button editor-button-small" title="Expand query editor"><i class="fa fa-expand"></i></button>
+            </div>
+
+            <div id="node-row-command" style="margin-top: 10px;">
+              <div class="form-row">
+                <div style="height: 250px; min-height:150px;" class="node-text-editor" id="node-input-command-editor"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="func-tab-playground" style="display:none; position: absolute; height: 100%; width: 100%;">
 
-			<div id="node-playground" class="node-playground-container-vertical">
+        <div id="node-playground" class="node-playground-container-vertical">
 
-				<div class="node-playground-sql-editor node-playground-layout-top" id="node-playground-sql-editor">
+          <div class="node-playground-sql-editor node-playground-layout-top" id="node-playground-sql-editor">
 
-					<div class="node-playground-sql-editor-toolbar">
-						<button id="node-playground-run" class="node-playground-toolbar-button"><i class="fa fa-play"></i> Run</button>
-					</div>
+            <div class="node-playground-sql-editor-toolbar">
+              <button id="node-playground-run" class="node-playground-toolbar-button"><i class="fa fa-play"></i> Run</button>
+            </div>
 
-					<div class="node-playground-sql-editor-container">
-						<div style="height: 250px;" class="node-playground-sql-editor-editable node-text-editor" id="node-input-playground-editor"></div>
-					</div>
-				</div>
+            <div class="node-playground-sql-editor-container">
+              <div style="height: 250px;" class="node-playground-sql-editor-editable node-text-editor" id="node-input-playground-editor"></div>
+            </div>
+          </div>
 
-				<div class="splitter-horizontal"></div>
+          <div class="splitter-horizontal"></div>
 
-				<div class="node-playground-layout-bottom" id="node-playground-result">
-					<div id="node-playground-result-message" class="node-playground-result-message"></div>
-					<div id="node-playground-result-table" class="node-playground-result-table ag-theme-alpine-dark"></div>
-				</div>
-			</div>
+          <div class="node-playground-layout-bottom" id="node-playground-result">
+            <div id="node-playground-result-message" class="node-playground-result-message"></div>
+            <div id="node-playground-result-table" class="node-playground-result-table ag-theme-alpine-dark"></div>
+          </div>
         </div>
+      </div>
 	</div>
 </script>
 
 <script type="text/html" data-help-name="MSSQL Execute">
-	<p>Execute queries in Microsoft SQL Server and Azure Databases SQL2000 ~ SQL2019</p>
+	<p>Execute queries in Microsoft SQL Server and Azure Databases</p>
+  <p> The node can be used to execute SQL commands and queries. The results can be returned directly or streamed in batches. The "Deliver Mode" option allows you to choose between these two modes.</p>
 </script>

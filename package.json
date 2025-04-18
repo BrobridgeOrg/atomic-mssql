@@ -15,12 +15,11 @@
   "node-red": {
     "nodes": {
       "mssql-connection": "mssql-connection.js",
-      "mssql-execute": "mssql-execute.js"
+      "mssql-execute": "mssql-execute.js",
+      "mssql-control": "mssql-control.js"
     }
   },
   "dependencies": {
-    "mssql": "^11.0.1",
-    "tedious": "^18.2.4",
-    "tedious-connection-pool": "^1.0.5"
+    "mssql": "^11.0.1"
   }
 }

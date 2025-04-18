@@ -12,15 +12,20 @@ module.exports = function(RED) {
 		return raw.replaceAll('\`', '\\\`');
 	}
 
+
 	function ExecuteNode(config) {
 		RED.nodes.createNode(this, config);
 
 		var node = this;
+
 		this.connection = RED.nodes.getNode(config.connection)
 		this.config = config;
 		this.config.outputPropType = config.outputPropType || 'msg';
 		this.config.outputProp = config.outputProp || 'payload';
 		this.tpl = sanitizedCmd(node.config.command) || '';
+
+    this.config.maxbatchrecords = parseInt(config.maxbatchrecords) || 100;
+    this.config.stream = (config.deliveryMethod == 'streaming') ? true : false;
 
 		if (!this.connection) {
 			node.status({
@@ -30,6 +35,29 @@ module.exports = function(RED) {
 			});
 			return;
 		}
+
+    this.sessionCounter = 0;
+    this.sessions = {};
+    this.next = (sessionId) => {
+      let session = this.sessions[sessionId];
+      if (!session) {
+        this.error(`Session ${sessionId} not found`);
+        return;
+      }
+
+      session.resume();
+    };
+
+    this.close = (sessionId) => {
+      let session = this.sessions[sessionId];
+      if (!session) {
+        return;
+      }
+
+      session.cancel();
+
+      delete this.sessions[sessionId];
+    };
 
 		node.on('input', async (msg, send, done) => {
 
@@ -58,63 +86,162 @@ module.exports = function(RED) {
 				tpl = sanitizedCmd(msg.query);
 			}
 
-			try {
-				node.status({
-					fill: 'blue',
-					shape: 'dot',
-					text: 'requesting'
-				});
+      node.status({
+        fill: 'blue',
+        shape: 'dot',
+        text: 'requesting'
+      });
 
-				let request = pool.request();
-				let rs = await request.query.apply(request, genQueryCmdParameters(tpl, msg));
+      // Prparing request
+      let err = null;
+      let rows = [];
+      let request = pool.request();
+      request.stream = true
 
-				node.status({
-					fill: 'green',
-					shape: 'dot',
-					text: 'done'
-				});
+      // Register session
+      let sessionId = node.id + '-' + Date.now() + '-' + ++this.sessionCounter;
+      this.sessions[sessionId] = request;
+
+      request.on('row', (row) => {
+
+        rows.push(row);
+
+        // not streaming
+        if (!node.config.stream)
+          return;
+
+        if (rows.length < node.config.maxbatchrecords)
+          return;
+
+        request.pause();
+
+				if (node.config.outputPropType == 'msg') {
+          let m = Object.assign({}, msg);
+          if (m.sessions instanceof Array) {
+            m.sessions.push(sessionId);
+          } else {
+            m.sessions = [ sessionId ];
+          }
+
+					m[node.config.outputProp] = {
+						results: rows,
+						rowsAffected: rows.length,
+            complete: false,
+					}
+
+          node.status({
+            fill: 'blue',
+            shape: 'dot',
+            text: 'streaming'
+          });
+
+          node.send(m);
+
+          // Reset buffer
+          rows = [];
+				}
+      });
+
+      request.on('done', (returnedValue) => {
+
+        if (err) {
+          node.error(err);
+          done(err);
+          return;
+        }
+
+        node.status({
+          fill: 'green',
+          shape: 'dot',
+          text: 'done'
+        });
 
 				// Preparing result
 				if (node.config.outputPropType == 'msg') {
 					msg[node.config.outputProp] = {
-						results: rs.recordset || [],
-						rowsAffected: rs.rowsAffected,
+						results: rows,
+						rowsAffected: returnedValue.rowsAffected,
+            complete: true,
 					}
 				}
 
 				node.send(msg);
 
-				done();
-			} catch(e) {
-				console.error('[MSSQL Query Error Stack]', e.stack);
-				
-				node.status({
-					fill: 'red',
-					shape: 'ring',
-					text: e.toString()
-				});
+        // Find session to remove from msg.sessions
+        let index = -1;
+        if (msg.sessions instanceof Array) {
+          index = msg.sessions.indexOf(sessionId);
+        }
 
-				msg.error = {
-					code: e.code,
-					lineNumber: e.lineNumber,
-					message: e.message,
-					name: e.name,
-					number: e.number,
-				};
-				
-				node.send(msg);
+        if (index > -1) {
+          msg.sessions.splice(index, 1);
+        }
 
-				done(e);
-			}
+        // Reset buffer
+        rows = [];
+
+        done();
+
+        delete this.sessions[sessionId];
+      });
+
+      request.on('error', (e) => {
+
+        // Find session to remove from msg.sessions
+        let index = -1;
+        if (msg.sessions instanceof Array) {deliveryMethod
+          index = msg.sessions.indexOf(sessionId);
+        }
+
+        if (index > -1) {
+          msg.sessions.splice(index, 1);
+        }
+
+        // Reset buffer
+        rows = [];
+
+        if (e.code == 'ECANCEL') {
+          return;
+        }
+
+        err = e;
+
+        node.status({
+          fill: 'red',
+          shape: 'ring',
+          text: err.toString()
+        });
+
+        delete this.sessions[sessionId];
+      });
+
+      let sql = null;
+      try {
+        sql = genQueryCmdParameters(tpl, msg);
+      } catch(e) {
+        node.error(e);
+        done();
+        return
+      }
+
+      // Execute SQL command
+      request.query.apply(request, sql);
 		});
 
 		node.on('close', async () => {
+
+      for (let sessionId in this.sessions) {
+        let session = this.sessions[sessionId];
+        session.cancel();
+      }
+
+      this.sessions = {};
 		});
 	}
 
-	// Admin API
-	const api = require('./apis');
-	api.init(RED);
+  // Admin API
+  const api = require('./apis');
+  api.init(RED);
 
 	RED.nodes.registerType('MSSQL Execute', ExecuteNode, {
 		credentials: {
