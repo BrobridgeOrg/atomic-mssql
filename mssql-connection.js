@@ -1,95 +1,95 @@
 
 module.exports = function (RED) {
 
-	function MSSQLConnectionNode(n) {
-		RED.nodes.createNode(this, n)
-		
-		let node = this;
+    function MSSQLConnectionNode(n) {
+        RED.nodes.createNode(this, n)
 
-		const events = require('events');
+        let node = this;
 
-		this.instance = new events.EventEmitter();
-		this.client = null;
-		this.dependencies = 0;
-		this.status = 'disconnected';
+        const events = require('events');
 
-		// Options
-		this.connConfig = {
-			server: n.server,
-			port: Number(n.port),
-			domain: n.domain,
-			database: n.database,
-      appName: n.appName || 'atomic',
-			connectionTimeout: Number(n.connectionTimeout) || 15000,
-			requestTimeout: Number(n.requestTimeout) || 15000,
-			connectionRetryInterval: Number(n.connectionRetryInterval) || 3000,
-			auth: {
-				type: n.authType || 'default',
-				username: this.credentials.username || 'sa',
-				password: this.credentials.password || ''
-			},
-		};
+        this.instance = new events.EventEmitter();
+        this.client = null;
+        this.dependencies = 0;
+        this.status = 'disconnected';
 
-		this.poolConfig = {
-			min: Number(n.poolMin) || 1,
-			max: Number(n.poolMax) || 10,
-			idleTimeoutMillis: Number(n.poolIdleTimeoutMillis) || 30000,
-		};
+        // Options
+        this.connConfig = {
+            server: n.server,
+            port: Number(n.port),
+            domain: n.domain,
+            database: n.database,
+            appName: n.appName || 'atomic',
+            connectionTimeout: Number(n.connectionTimeout) || 15000,
+            requestTimeout: Number(n.requestTimeout) || 15000,
+            connectionRetryInterval: Number(n.connectionRetryInterval) || 3000,
+            auth: {
+                type: n.authType || 'default',
+                username: this.credentials.username || 'sa',
+                password: this.credentials.password || ''
+            },
+        };
 
-		// Create original client
-		let Client = require('./client');
+        this.poolConfig = {
+            min: Number(n.poolMin) || 1,
+            max: Number(n.poolMax) || 10,
+            idleTimeoutMillis: Number(n.poolIdleTimeoutMillis) || 30000,
+        };
 
-		this.client = new Client(null, {
-			connection: this.connConfig,
-			pool: this.poolConfig
-		});
+        // Create original client
+        let Client = require('./client');
 
-		// Setup events
-		this.client.on('disconnect', () => {
-			this.status = 'disconnected';
-			node.log('Disconnected from server: ' + node.connConfig.server + ':' + node.connConfig.port);
-		});
+        this.client = new Client(null, {
+            connection: this.connConfig,
+            pool: this.poolConfig
+        });
 
-		this.client.on('reconnect', () => {
-			this.status = 'reconnecting';
-			node.log('Reconnecting to server: ' + node.connConfig.server + ':' + node.connConfig.port);
-		});
+        // Setup events
+        this.client.on('disconnect', () => {
+            this.status = 'disconnected';
+            node.log('Disconnected from server: ' + node.connConfig.server + ':' + node.connConfig.port);
+        });
 
-		this.client.on('connected', (err) => {
-			if (err) {
-				node.log('Failed to connect to MSSQL server: ' + err)
-				this.status = 'disconnected';
-				return
-			}
+        this.client.on('reconnect', () => {
+            this.status = 'reconnecting';
+            node.log('Reconnecting to server: ' + node.connConfig.server + ':' + node.connConfig.port);
+        });
 
-			node.log('Connected to MSSQL server: ' + node.connConfig.server + ':' + node.connConfig.port);
-			this.status = 'connected';
-		});
+        this.client.on('connected', (err) => {
+            if (err) {
+                node.log('Failed to connect to MSSQL server: ' + err)
+                this.status = 'disconnected';
+                return
+            }
 
-		this.client.on('error', (err) => {
-			node.error(err)
-		});
+            node.log('Connected to MSSQL server: ' + node.connConfig.server + ':' + node.connConfig.port);
+            this.status = 'connected';
+        });
 
-		node.log('Connecting to MSSQL server: ' + node.connConfig.server + ':' + node.connConfig.port);
-		this.client.connect();
+        this.client.on('error', (err) => {
+            node.error(err)
+        });
 
-		this.getPool = function() {
-			return node.client.getPool();
-		};
+        node.log('Connecting to MSSQL server: ' + node.connConfig.server + ':' + node.connConfig.port);
+        this.client.connect();
 
-		node.on('close', function() {
-			node.client.disconnect();
-		})
-	}
+        this.getPool = function () {
+            return node.client.getPool();
+        };
 
-	RED.nodes.registerType('MSSQL Connection', MSSQLConnectionNode, {
-		credentials: {
-      username: {
-        type: 'text'
-      },
-      password: {
-        type: 'password'
-      }
-		}
-	})
+        node.on('close', function () {
+            node.client.disconnect();
+        })
+    }
+
+    RED.nodes.registerType('MSSQL Connection', MSSQLConnectionNode, {
+        credentials: {
+            username: {
+                type: 'text'
+            },
+            password: {
+                type: 'password'
+            }
+        }
+    })
 }

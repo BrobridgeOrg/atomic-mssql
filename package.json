@@ -1,5 +1,5 @@
 {
-  "name": "atomic-mssql",
+  "name": "@brobridge/atomic-mssql",
   "version": "0.0.21",
   "description": "MSSQL module for Brobridge Atomic",
   "scripts": {
