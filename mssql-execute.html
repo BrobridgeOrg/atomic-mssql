@@ -1,288 +1,288 @@
-<script src="resources/atomic-mssql/jquery-resizable.min.js"></script>
-<script src="resources/atomic-mssql/ag-grid-community.min.noStyle.js"></script>
-<link rel="stylesheet" href="resources/atomic-mssql/ag-grid.css"/>
-<link rel="stylesheet" href="resources/atomic-mssql/ag-theme-alpine.css"/>
+<script src="resources/@brobridge/atomic-mssql/jquery-resizable.min.js"></script>
+<script src="resources/@brobridge/atomic-mssql/ag-grid-community.min.noStyle.js"></script>
+<link rel="stylesheet" href="resources/@brobridge/atomic-mssql/ag-grid.css"/>
+<link rel="stylesheet" href="resources/@brobridge/atomic-mssql/ag-theme-alpine.css"/>
 <script type="text/javascript">
 
-	RED.nodes.registerType('MSSQL Execute', {
-		category: 'Database',
-		color: '#88bb00',
-		credentials: {
-		},
-		defaults: {
-			name: {
-				value: ''
-			},
-			connection: {
-				value: '',
-				type: "MSSQL Connection"
-			},
-			querySource: {
-				value: 'auto',
-				required: true
-			},
-			command: {
-				value: ''
-			},
-			deliveryMethod: {
-				value: 'direct',
-				required: true
-			},
-			maxbatchrecords: {
-				value: 100,
-				required: true
-			},
-			outputPropType: {
-				value: 'msg'
-			},
-			outputProp: {
-				value: 'payload'
-			}
-		},
-		inputs: 1,
-		outputs: 1,
-		icon: 'db.png',
-		label: function() {
-			return this.name || 'MSSQL Execute';
-		},
-		oneditprepare: function() {
+    RED.nodes.registerType('MSSQL Execute', {
+        category: 'Database',
+        color: '#88bb00',
+        credentials: {
+        },
+        defaults: {
+            name: {
+                value: ''
+            },
+            connection: {
+                value: '',
+                type: "MSSQL Connection"
+            },
+            querySource: {
+                value: 'auto',
+                required: true
+            },
+            command: {
+                value: ''
+            },
+            deliveryMethod: {
+                value: 'direct',
+                required: true
+            },
+            maxbatchrecords: {
+                value: 100,
+                required: true
+            },
+            outputPropType: {
+                value: 'msg'
+            },
+            outputProp: {
+                value: 'payload'
+            }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'db.png',
+        label: function() {
+            return this.name || 'MSSQL Execute';
+        },
+        oneditprepare: function() {
 
-			let node = this;
+            let node = this;
 
-			// Delivery methods
-			function updateDeliveryMethods() {
-				switch($('#node-input-deliveryMethod').val()) {
-				case 'streaming':
-					$('#node-row-streaming').show();
-					break;
-				default:
-					$('#node-row-streaming').hide();
-				}
-			}
+            // Delivery methods
+            function updateDeliveryMethods() {
+                switch($('#node-input-deliveryMethod').val()) {
+                case 'streaming':
+                    $('#node-row-streaming').show();
+                    break;
+                default:
+                    $('#node-row-streaming').hide();
+                }
+            }
 
       updateDeliveryMethods();
       $("#node-input-deliveryMethod").on("change", function() {
         updateDeliveryMethods();
       });
 
-			// Tabs
-			var tabs = RED.tabs.create({
-				id: "func-tabs",
-				onchange: function(tab) {
-					$("#func-tabs-content").children().hide();
-					$("#" + tab.id).show();
+            // Tabs
+            var tabs = RED.tabs.create({
+                id: "func-tabs",
+                onchange: function(tab) {
+                    $("#func-tabs-content").children().hide();
+                    $("#" + tab.id).show();
 
-					switch(tab.id) {
-					case 'func-tab-playground':
-						$('.node-playground-layout-top').resizableSafe({
-							handleSelector: ".splitter-horizontal",
-							resizeWidth: false,
-							onDrag: function(e, $el, newWidth, newHeight, opt) {
+                    switch(tab.id) {
+                    case 'func-tab-playground':
+                        $('.node-playground-layout-top').resizableSafe({
+                            handleSelector: ".splitter-horizontal",
+                            resizeWidth: false,
+                            onDrag: function(e, $el, newWidth, newHeight, opt) {
 
-								let margin = 45;
-								let editorHeight = newHeight - margin; 
+                                let margin = 45;
+                                let editorHeight = newHeight - margin; 
 
-								// min height
-								if (newHeight <= 150) {
-									editorHeight = 150 - margin;
-								}
+                                // min height
+                                if (newHeight <= 150) {
+                                    editorHeight = 150 - margin;
+                                }
 
-								// max height
-								let maxHeight = $('#node-playground').height() - 300;
-								if (editorHeight >= maxHeight - margin) {
-									editorHeight = maxHeight - margin;
-								}
+                                // max height
+                                let maxHeight = $('#node-playground').height() - 300;
+                                if (editorHeight >= maxHeight - margin) {
+                                    editorHeight = maxHeight - margin;
+                                }
 
-								// Update editor size
-								$('#node-input-playground-editor').css('height', editorHeight  + 'px')
-								node.playgroundEditor.resize();
+                                // Update editor size
+                                $('#node-input-playground-editor').css('height', editorHeight  + 'px')
+                                node.playgroundEditor.resize();
 
-								return false;
-							}
-						});
-						break;
-					default:
-					}
-				}
-			});
-			tabs.addTab({
-				id: "func-tab-config",
-				iconClass: "fa fa-code",
-				label: 'Query Command'
-			});
-			tabs.addTab({
-				id: "func-tab-playground",
-				iconClass: "fa fa-search",
-				label: 'SQL Playground'
-			});
+                                return false;
+                            }
+                        });
+                        break;
+                    default:
+                    }
+                }
+            });
+            tabs.addTab({
+                id: "func-tab-config",
+                iconClass: "fa fa-code",
+                label: 'Query Command'
+            });
+            tabs.addTab({
+                id: "func-tab-playground",
+                iconClass: "fa fa-search",
+                label: 'SQL Playground'
+            });
 
-			// Query source
-			function updateQuerySourceOptions() {
+            // Query source
+            function updateQuerySourceOptions() {
 
-				switch($('#node-input-querySource').val()) {
-				case 'dynamic':
-					$('#node-row-command').hide();
-					break;
-				default:
-					$('#node-row-command').show();
-				}
-			}
+                switch($('#node-input-querySource').val()) {
+                case 'dynamic':
+                    $('#node-row-command').hide();
+                    break;
+                default:
+                    $('#node-row-command').show();
+                }
+            }
 
       $("#node-input-querySource").on("change", function() {
         updateQuerySourceOptions();
       });
 
-			if (!this.querySource) {
-				this.querySource = 'auto';
-				$('#node-input-querySource').val(this.querySource);
-			}
+            if (!this.querySource) {
+                this.querySource = 'auto';
+                $('#node-input-querySource').val(this.querySource);
+            }
 
-			this.editor = RED.editor.createEditor({
-				id: 'node-input-command-editor',
-				mode: 'ace/mode/sql',
-				value: this.command
-			});
+            this.editor = RED.editor.createEditor({
+                id: 'node-input-command-editor',
+                mode: 'ace/mode/sql',
+                value: this.command
+            });
 
-			$('#node-query-expand').click(function(e) {
-				e.preventDefault();
-				const value = node.editor.getValue();
-				RED.editor.editJavaScript({
-					title: 'Edit SQL Query',
-					value: value,
-					width: 'Infinity',
-					cursor: node.editor.getCursorPosition(),
-					mode: 'ace/mode/sql',
-					complete: function(v, cursor) {
-						node.editor.setValue(v, -1);
-						node.editor.gotoLine(cursor.row + 1, cursor.column, false);
-						setTimeout(function() {
-							node.editor.focus();
-						}, 300);
-					}
-				});
-			});
+            $('#node-query-expand').click(function(e) {
+                e.preventDefault();
+                const value = node.editor.getValue();
+                RED.editor.editJavaScript({
+                    title: 'Edit SQL Query',
+                    value: value,
+                    width: 'Infinity',
+                    cursor: node.editor.getCursorPosition(),
+                    mode: 'ace/mode/sql',
+                    complete: function(v, cursor) {
+                        node.editor.setValue(v, -1);
+                        node.editor.gotoLine(cursor.row + 1, cursor.column, false);
+                        setTimeout(function() {
+                            node.editor.focus();
+                        }, 300);
+                    }
+                });
+            });
 
-			// Output property
-			let outputProp = this.outputProp || 'payload';
+            // Output property
+            let outputProp = this.outputProp || 'payload';
 
-			$("#node-input-typed-outputProp")
-				.typedInput({
-					type: 'msg',
-					types: [ 'msg' ],
-					typeField: '#node-input-outputPropType',
-				})
-				.typedInput('type', this.outputPropType || 'msg')
-				.typedInput('value', outputProp);
+            $("#node-input-typed-outputProp")
+                .typedInput({
+                    type: 'msg',
+                    types: [ 'msg' ],
+                    typeField: '#node-input-outputPropType',
+                })
+                .typedInput('type', this.outputPropType || 'msg')
+                .typedInput('value', outputProp);
 
-			// Playground
-			let playgroundEditor = RED.editor.createEditor({
-				id: 'node-input-playground-editor',
-				mode: 'ace/mode/sql'
-			});
+            // Playground
+            let playgroundEditor = RED.editor.createEditor({
+                id: 'node-input-playground-editor',
+                mode: 'ace/mode/sql'
+            });
 
-			node.playgroundEditor = playgroundEditor;
+            node.playgroundEditor = playgroundEditor;
 
-			$('#node-playground-run').click(function(e) {
+            $('#node-playground-run').click(function(e) {
 
-				// Do nothing
-				if (!playgroundEditor.getValue()) {
-					return;
-				}
+                // Do nothing
+                if (!playgroundEditor.getValue()) {
+                    return;
+                }
 
-				$('#node-playground-result-table').empty();
+                $('#node-playground-result-table').empty();
 
-				let headers = {}
+                let headers = {}
 
-				// Getting token information from local storage
-				let authInfo = localStorage.getItem('auth-tokens');
-				if (authInfo != null) {
-					let tokenInfo = JSON.parse(localStorage.getItem('auth-tokens'));
-					headers.Authorization = 'Bearer ' + tokenInfo.access_token;
-				}
+                // Getting token information from local storage
+                let authInfo = localStorage.getItem('auth-tokens');
+                if (authInfo != null) {
+                    let tokenInfo = JSON.parse(localStorage.getItem('auth-tokens'));
+                    headers.Authorization = 'Bearer ' + tokenInfo.access_token;
+                }
 
-				$.ajax({
-					method: 'POST',
-					dataType: 'json',
-					cache: false,
-					url: '/nodes/atomic-mssql/apis/execute',
-					data: {
-						connection: node.connection,
-						query: playgroundEditor.getValue()
-					},
-					headers: headers,
-					success: function(data) {
-						$('#node-playground-result-message').hide().empty();
+                $.ajax({
+                    method: 'POST',
+                    dataType: 'json',
+                    cache: false,
+                    url: '/nodes/@brobridge/atomic-mssql/apis/execute',
+                    data: {
+                        connection: node.connection,
+                        query: playgroundEditor.getValue()
+                    },
+                    headers: headers,
+                    success: function(data) {
+                        $('#node-playground-result-message').hide().empty();
 
-						// Error
-						if (!data.success) {
-							$('#node-playground-result-message')
-								.append($('<div>').text('Finished with error.'))
-								.append($('<div>').text([
-									'Msg ' + data.error.number,
-									'Level ' + data.error.class,
-									'State ' + data.error.state,
-								].join(',')))
-								.append($('<div>').text('Line ' + data.error.lineNumber + ': ' + data.error.message))
-								.show();
+                        // Error
+                        if (!data.success) {
+                            $('#node-playground-result-message')
+                                .append($('<div>').text('Finished with error.'))
+                                .append($('<div>').text([
+                                    'Msg ' + data.error.number,
+                                    'Level ' + data.error.class,
+                                    'State ' + data.error.state,
+                                ].join(',')))
+                                .append($('<div>').text('Line ' + data.error.lineNumber + ': ' + data.error.message))
+                                .show();
 
-							return;
-						}
+                            return;
+                        }
 
-						if (!data.results.length) {
+                        if (!data.results.length) {
 
-							// Delete or Insert
-							if (data.rowsAffected.length) {
-								$('#node-playground-result-message')
-									.append($('<div>').text('Finished.'))
-									.append($('<div>').text('Statement completed successfully. (' + data.rowsAffected[0] + ' rows affected)'))
-									.show();
-							}
+                            // Delete or Insert
+                            if (data.rowsAffected.length) {
+                                $('#node-playground-result-message')
+                                    .append($('<div>').text('Finished.'))
+                                    .append($('<div>').text('Statement completed successfully. (' + data.rowsAffected[0] + ' rows affected)'))
+                                    .show();
+                            }
 
-							return;
-						}
+                            return;
+                        }
 
-						// Rendering table to show results
-						let gridOptions = {
-							defaultColDef: {
-								resizable: true,
-							},
-							columnDefs: Object.keys(data.results[0]).map((key) => {
-								return {
-									headerName: key,
-									field: key
-								};
-							}),
-							rowData: data.results
-						};
+                        // Rendering table to show results
+                        let gridOptions = {
+                            defaultColDef: {
+                                resizable: true,
+                            },
+                            columnDefs: Object.keys(data.results[0]).map((key) => {
+                                return {
+                                    headerName: key,
+                                    field: key
+                                };
+                            }),
+                            rowData: data.results
+                        };
 
-						var eGridDiv = document.querySelector('#node-playground-result-table');
-						new agGrid.Grid(eGridDiv, gridOptions);
+                        var eGridDiv = document.querySelector('#node-playground-result-table');
+                        new agGrid.Grid(eGridDiv, gridOptions);
 
-						// Auto-resize
-						const allColumnIds = [];
-						gridOptions.columnApi.getColumns().forEach((column) => {
-							allColumnIds.push(column.getId());
-						});
+                        // Auto-resize
+                        const allColumnIds = [];
+                        gridOptions.columnApi.getColumns().forEach((column) => {
+                            allColumnIds.push(column.getId());
+                        });
 
-						gridOptions.columnApi.autoSizeColumns(allColumnIds, false);
+                        gridOptions.columnApi.autoSizeColumns(allColumnIds, false);
 
-					}
-				});
-			});
-		},
-		oneditsave: function() {
-			this.command = this.editor.getValue();
-			this.editor.destroy();
-			delete this.editor;
+                    }
+                });
+            });
+        },
+        oneditsave: function() {
+            this.command = this.editor.getValue();
+            this.editor.destroy();
+            delete this.editor;
 
-			$("#node-input-outputPropType").val($("#node-input-typed-outputProp").typedInput('type'));
-			$("#node-input-outputProp").val($("#node-input-typed-outputProp").typedInput('value'));
-		},
-		oneditcancel: function() {
-			this.editor.destroy();
-			delete this.editor;
-		},
-	});
+            $("#node-input-outputPropType").val($("#node-input-typed-outputProp").typedInput('type'));
+            $("#node-input-outputProp").val($("#node-input-typed-outputProp").typedInput('value'));
+        },
+        oneditcancel: function() {
+            this.editor.destroy();
+            delete this.editor;
+        },
+    });
 </script>
 
 <style>
@@ -290,82 +290,82 @@
 .ag-theme-alpine-dark {
     --ag-grid-size: 4px;
     --ag-list-item-height: 20px;
-	--ag-font-size: 12px;
+    --ag-font-size: 12px;
 }
 
 .node-playground-container-vertical {
-	display: flex;
-	flex-direction: column;
-	height: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 /*	height: calc(100% - 500px);*/
 /*	border: 1px solid silver;*/
-	overflow: hidden;
+    overflow: hidden;
 }
 
 .node-playground-layout-top {
-	flex: 0 0 auto;
-	min-height: 150px;
-	width: 100%;
-	white-space: nowrap;
-	color: white;
+    flex: 0 0 auto;
+    min-height: 150px;
+    width: 100%;
+    white-space: nowrap;
+    color: white;
 }
 
 .node-playground-layout-bottom {
-	flex: 1 1 auto;
-	min-height: 200px;
+    flex: 1 1 auto;
+    min-height: 200px;
 }
 
 .splitter-horizontal {
-	flex: 0 0 auto;
-	height: 8px;
-	cursor: row-resize;
+    flex: 0 0 auto;
+    height: 8px;
+    cursor: row-resize;
 }
 
 .node-playground-sql-editor {
-	position: relative;
+    position: relative;
 }
 
 .node-playground-sql-editor-toolbar {
-	display: block;
-	width: 100%;
-	min-height: 40px;
-	padding: 5px;
-	box-sizing: border-box;
-	box-shadow: 7px 0 7px rgba(0,0,0,.5);
+    display: block;
+    width: 100%;
+    min-height: 40px;
+    padding: 5px;
+    box-sizing: border-box;
+    box-shadow: 7px 0 7px rgba(0,0,0,.5);
 }
 
 .node-playground-toolbar-button {
-	float: right;
-	min-width: 100px;
-	min-height: 30px;
-	border-radius: 5px;
-	border: 0px;
+    float: right;
+    min-width: 100px;
+    min-height: 30px;
+    border-radius: 5px;
+    border: 0px;
 }
 
 .node-playground-sql-editor-container {
-	display: block;
-	width: 100%;
-	margin-top: 5px;
+    display: block;
+    width: 100%;
+    margin-top: 5px;
 }
 
 #node-playground-result {
-	background: rgba(0,0,0,.1);
+    background: rgba(0,0,0,.1);
 }
 
 .node-playground-result-message {
-	display: none;
-	padding: 10px;
+    display: none;
+    padding: 10px;
 }
 
 .node-playground-result-table {
-	width: 100%;
-	height: calc(100% - 2px);
+    width: 100%;
+    height: calc(100% - 2px);
 }
 
 </style>
 
 <script type="text/x-red" data-template-name="MSSQL Execute">
-	<div class="form-row">
+    <div class="form-row">
         <label for="node-input-name" style="width: 130px"><i class="fa fa-stack-exchange"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
@@ -445,10 +445,10 @@
           </div>
         </div>
       </div>
-	</div>
+    </div>
 </script>
 
 <script type="text/html" data-help-name="MSSQL Execute">
-	<p>Execute queries in Microsoft SQL Server and Azure Databases</p>
+    <p>Execute queries in Microsoft SQL Server and Azure Databases</p>
   <p> The node can be used to execute SQL commands and queries. The results can be returned directly or streamed in batches. The "Deliver Mode" option allows you to choose between these two modes.</p>
 </script>
