@@ -1,6 +1,14 @@
 {
   "name": "@brobridge/atomic-mssql",
-  "version": "0.0.23",
+  "version": "0.0.24",
+  "homepage": "https://github.com/BrobridgeOrg/atomic-mssql#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BrobridgeOrg/atomic-mssql.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BrobridgeOrg/atomic-mssql/issues"
+  },
   "description": "MSSQL module for Brobridge Atomic",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -13,6 +21,7 @@
   "author": "Fred Chien <fred@brobridge.com>",
   "license": "APL",
   "node-red": {
+    "version": ">=2.0.0",
     "nodes": {
       "mssql-connection": "mssql-connection.js",
       "mssql-execute": "mssql-execute.js",
@@ -21,5 +30,8 @@
   },
   "dependencies": {
     "mssql": "^11.0.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
