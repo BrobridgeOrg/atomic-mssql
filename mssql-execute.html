@@ -1,7 +1,7 @@
 <script src="resources/@brobridge/atomic-mssql/jquery-resizable.min.js"></script>
 <script src="resources/@brobridge/atomic-mssql/ag-grid-community.min.noStyle.js"></script>
-<link rel="stylesheet" href="resources/@brobridge/atomic-mssql/ag-grid.css"/>
-<link rel="stylesheet" href="resources/@brobridge/atomic-mssql/ag-theme-alpine.css"/>
+<link rel="stylesheet" href="resources/@brobridge/atomic-mssql/ag-grid.css" />
+<link rel="stylesheet" href="resources/@brobridge/atomic-mssql/ag-theme-alpine.css" />
 <script type="text/javascript">
 
     RED.nodes.registerType('MSSQL Execute', {
@@ -42,66 +42,66 @@
         inputs: 1,
         outputs: 1,
         icon: 'db.png',
-        label: function() {
+        label: function () {
             return this.name || 'MSSQL Execute';
         },
-        oneditprepare: function() {
+        oneditprepare: function () {
 
             let node = this;
 
             // Delivery methods
             function updateDeliveryMethods() {
-                switch($('#node-input-deliveryMethod').val()) {
-                case 'streaming':
-                    $('#node-row-streaming').show();
-                    break;
-                default:
-                    $('#node-row-streaming').hide();
+                switch ($('#node-input-deliveryMethod').val()) {
+                    case 'streaming':
+                        $('#node-row-streaming').show();
+                        break;
+                    default:
+                        $('#node-row-streaming').hide();
                 }
             }
 
-      updateDeliveryMethods();
-      $("#node-input-deliveryMethod").on("change", function() {
-        updateDeliveryMethods();
-      });
+            updateDeliveryMethods();
+            $("#node-input-deliveryMethod").on("change", function () {
+                updateDeliveryMethods();
+            });
 
             // Tabs
             var tabs = RED.tabs.create({
                 id: "func-tabs",
-                onchange: function(tab) {
+                onchange: function (tab) {
                     $("#func-tabs-content").children().hide();
                     $("#" + tab.id).show();
 
-                    switch(tab.id) {
-                    case 'func-tab-playground':
-                        $('.node-playground-layout-top').resizableSafe({
-                            handleSelector: ".splitter-horizontal",
-                            resizeWidth: false,
-                            onDrag: function(e, $el, newWidth, newHeight, opt) {
+                    switch (tab.id) {
+                        case 'func-tab-playground':
+                            $('.node-playground-layout-top').resizableSafe({
+                                handleSelector: ".splitter-horizontal",
+                                resizeWidth: false,
+                                onDrag: function (e, $el, newWidth, newHeight, opt) {
 
-                                let margin = 45;
-                                let editorHeight = newHeight - margin; 
+                                    let margin = 45;
+                                    let editorHeight = newHeight - margin;
 
-                                // min height
-                                if (newHeight <= 150) {
-                                    editorHeight = 150 - margin;
+                                    // min height
+                                    if (newHeight <= 150) {
+                                        editorHeight = 150 - margin;
+                                    }
+
+                                    // max height
+                                    let maxHeight = $('#node-playground').height() - 300;
+                                    if (editorHeight >= maxHeight - margin) {
+                                        editorHeight = maxHeight - margin;
+                                    }
+
+                                    // Update editor size
+                                    $('#node-input-playground-editor').css('height', editorHeight + 'px')
+                                    node.playgroundEditor.resize();
+
+                                    return false;
                                 }
-
-                                // max height
-                                let maxHeight = $('#node-playground').height() - 300;
-                                if (editorHeight >= maxHeight - margin) {
-                                    editorHeight = maxHeight - margin;
-                                }
-
-                                // Update editor size
-                                $('#node-input-playground-editor').css('height', editorHeight  + 'px')
-                                node.playgroundEditor.resize();
-
-                                return false;
-                            }
-                        });
-                        break;
-                    default:
+                            });
+                            break;
+                        default:
                     }
                 }
             });
@@ -119,18 +119,18 @@
             // Query source
             function updateQuerySourceOptions() {
 
-                switch($('#node-input-querySource').val()) {
-                case 'dynamic':
-                    $('#node-row-command').hide();
-                    break;
-                default:
-                    $('#node-row-command').show();
+                switch ($('#node-input-querySource').val()) {
+                    case 'dynamic':
+                        $('#node-row-command').hide();
+                        break;
+                    default:
+                        $('#node-row-command').show();
                 }
             }
 
-      $("#node-input-querySource").on("change", function() {
-        updateQuerySourceOptions();
-      });
+            $("#node-input-querySource").on("change", function () {
+                updateQuerySourceOptions();
+            });
 
             if (!this.querySource) {
                 this.querySource = 'auto';
@@ -143,7 +143,7 @@
                 value: this.command
             });
 
-            $('#node-query-expand').click(function(e) {
+            $('#node-query-expand').click(function (e) {
                 e.preventDefault();
                 const value = node.editor.getValue();
                 RED.editor.editJavaScript({
@@ -152,10 +152,10 @@
                     width: 'Infinity',
                     cursor: node.editor.getCursorPosition(),
                     mode: 'ace/mode/sql',
-                    complete: function(v, cursor) {
+                    complete: function (v, cursor) {
                         node.editor.setValue(v, -1);
                         node.editor.gotoLine(cursor.row + 1, cursor.column, false);
-                        setTimeout(function() {
+                        setTimeout(function () {
                             node.editor.focus();
                         }, 300);
                     }
@@ -168,7 +168,7 @@
             $("#node-input-typed-outputProp")
                 .typedInput({
                     type: 'msg',
-                    types: [ 'msg' ],
+                    types: ['msg'],
                     typeField: '#node-input-outputPropType',
                 })
                 .typedInput('type', this.outputPropType || 'msg')
@@ -182,7 +182,7 @@
 
             node.playgroundEditor = playgroundEditor;
 
-            $('#node-playground-run').click(function(e) {
+            $('#node-playground-run').click(function (e) {
 
                 // Do nothing
                 if (!playgroundEditor.getValue()) {
@@ -210,7 +210,7 @@
                         query: playgroundEditor.getValue()
                     },
                     headers: headers,
-                    success: function(data) {
+                    success: function (data) {
                         $('#node-playground-result-message').hide().empty();
 
                         // Error
@@ -270,7 +270,7 @@
                 });
             });
         },
-        oneditsave: function() {
+        oneditsave: function () {
             this.command = this.editor.getValue();
             this.editor.destroy();
             delete this.editor;
@@ -278,7 +278,7 @@
             $("#node-input-outputPropType").val($("#node-input-typed-outputProp").typedInput('type'));
             $("#node-input-outputProp").val($("#node-input-typed-outputProp").typedInput('value'));
         },
-        oneditcancel: function() {
+        oneditcancel: function () {
             this.editor.destroy();
             delete this.editor;
         },
@@ -286,82 +286,80 @@
 </script>
 
 <style>
+    .ag-theme-alpine-dark {
+        --ag-grid-size: 4px;
+        --ag-list-item-height: 20px;
+        --ag-font-size: 12px;
+    }
 
-.ag-theme-alpine-dark {
-    --ag-grid-size: 4px;
-    --ag-list-item-height: 20px;
-    --ag-font-size: 12px;
-}
+    .node-playground-container-vertical {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        /*	height: calc(100% - 500px);*/
+        /*	border: 1px solid silver;*/
+        overflow: hidden;
+    }
 
-.node-playground-container-vertical {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-/*	height: calc(100% - 500px);*/
-/*	border: 1px solid silver;*/
-    overflow: hidden;
-}
+    .node-playground-layout-top {
+        flex: 0 0 auto;
+        min-height: 150px;
+        width: 100%;
+        white-space: nowrap;
+        color: white;
+    }
 
-.node-playground-layout-top {
-    flex: 0 0 auto;
-    min-height: 150px;
-    width: 100%;
-    white-space: nowrap;
-    color: white;
-}
+    .node-playground-layout-bottom {
+        flex: 1 1 auto;
+        min-height: 200px;
+    }
 
-.node-playground-layout-bottom {
-    flex: 1 1 auto;
-    min-height: 200px;
-}
+    .splitter-horizontal {
+        flex: 0 0 auto;
+        height: 8px;
+        cursor: row-resize;
+    }
 
-.splitter-horizontal {
-    flex: 0 0 auto;
-    height: 8px;
-    cursor: row-resize;
-}
+    .node-playground-sql-editor {
+        position: relative;
+    }
 
-.node-playground-sql-editor {
-    position: relative;
-}
+    .node-playground-sql-editor-toolbar {
+        display: block;
+        width: 100%;
+        min-height: 40px;
+        padding: 5px;
+        box-sizing: border-box;
+        box-shadow: 7px 0 7px rgba(0, 0, 0, .5);
+    }
 
-.node-playground-sql-editor-toolbar {
-    display: block;
-    width: 100%;
-    min-height: 40px;
-    padding: 5px;
-    box-sizing: border-box;
-    box-shadow: 7px 0 7px rgba(0,0,0,.5);
-}
+    .node-playground-toolbar-button {
+        float: right;
+        min-width: 100px;
+        min-height: 30px;
+        border-radius: 5px;
+        border: 0px;
+    }
 
-.node-playground-toolbar-button {
-    float: right;
-    min-width: 100px;
-    min-height: 30px;
-    border-radius: 5px;
-    border: 0px;
-}
+    .node-playground-sql-editor-container {
+        display: block;
+        width: 100%;
+        margin-top: 5px;
+    }
 
-.node-playground-sql-editor-container {
-    display: block;
-    width: 100%;
-    margin-top: 5px;
-}
+    #node-playground-result {
+        background: rgba(0, 0, 0, .1);
+    }
 
-#node-playground-result {
-    background: rgba(0,0,0,.1);
-}
+    .node-playground-result-message {
+        display: none;
+        padding: 10px;
+    }
 
-.node-playground-result-message {
-    display: none;
-    padding: 10px;
-}
-
-.node-playground-result-table {
-    width: 100%;
-    height: calc(100% - 2px);
-}
-
+    .node-playground-result-table {
+        width: 100%;
+        height: calc(100% - 2px);
+    }
 </style>
 
 <script type="text/x-red" data-template-name="MSSQL Execute">
@@ -449,6 +447,20 @@
 </script>
 
 <script type="text/html" data-help-name="MSSQL Execute">
-    <p>Execute queries in Microsoft SQL Server and Azure Databases</p>
-  <p> The node can be used to execute SQL commands and queries. The results can be returned directly or streamed in batches. The "Deliver Mode" option allows you to choose between these two modes.</p>
-</script>
+    <p>The <b>MSSQL Execute</b> node allows you to run SQL queries against a Microsoft SQL Server database.</p>
+    <h3>Query Source</h3>
+    <ul>
+        <li><code>auto</code>: Uses <code>msg.query</code> if available; otherwise uses static SQL.</li>
+        <li><code>static</code>: Always uses the static SQL defined in the node.</li>
+        <li><code>dynamic</code>: Uses <code>msg.query</code> only. Skips if <code>msg.query</code> is empty.</li>
+    </ul>
+    <h3>Delivery Method</h3>
+    <ul>
+      <li><b>direct</b>: Sends all query results in one message</li>
+      <li><b>streaming</b>: Sends batches of results. Use with <b>MSSQL Control</b> node</li>
+    </ul>
+    <h3>Output Property</h3>
+    <p>You can specify where the output will be stored (e.g., <code>msg.payload</code>)</p>
+    <h3>Playground</h3>
+    <p>Use the integrated SQL editor to test and preview results from your configured connection.</p>
+  </script>

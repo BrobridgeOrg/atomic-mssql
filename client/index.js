@@ -8,20 +8,19 @@ module.exports = class Client extends events.EventEmitter {
         super();
 
         this.opts = Object.assign({
-                server: '0.0.0.0',
-                port: 1433,
-                database: '',
-                requestTimeout: 15000,
-                connectionTimeout: 15000,
-                connectionRetryInterval: 3000,
-            }, opts.connection, {
-                auth: Object.assign({
-                    type: 'default',
-                    username: '',
-                    password: '',
-                }, opts.connection.auth || {})
-            });
-
+            server: '0.0.0.0',
+            port: 1433,
+            database: '',
+            requestTimeout: 15000,
+            connectionTimeout: 15000,
+            connectionRetryInterval: 3000,
+        }, opts.connection, {
+            auth: Object.assign({
+                type: 'default',
+                username: '',
+                password: '',
+            }, opts.connection.auth || {})
+        });
         this.poolOpts = Object({
             min: 1,
             max: 10,
@@ -39,7 +38,7 @@ module.exports = class Client extends events.EventEmitter {
     }
 
     getConnectionConfigs() {
-
+        //console.log(this);
         // Preparing configurations
         let configs = {
             server: this.opts.server,
@@ -52,9 +51,10 @@ module.exports = class Client extends events.EventEmitter {
                 requestTimeout: this.opts.requestTimeout,
                 connectionTimeout: this.opts.connectionTimeout,
                 connectionRetryInterval: this.opts.connectionRetryInterval,
-                trustServerCertificate: true,
                 appName: this.opts.appName,
-                maxRetriesOnTransientErrors: 0
+                maxRetriesOnTransientErrors: 0,
+                encrypt: this.opts.encryption,
+                trustServerCertificate: this.opts.trustServerCertificate
             }
         };
 
