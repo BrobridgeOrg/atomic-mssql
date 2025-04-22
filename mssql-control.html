@@ -1,171 +1,171 @@
 <script type="text/javascript">
-  RED.nodes.registerType('MSSQL Control', {
-    category: 'Database',
-    color: '#88bb00',
-    defaults: {
-      name: { value: "" },
-      targetNodeId: { value: "" },
-      selectMode: { value: "auto" },
-      selectedNodes: { value: [] },
-      action: { value: "continue" },
-    },
-    inputs: 1,
-    outputs: 0,
-    icon: 'db.png',
-    label: function() {
-      return this.name || "MSSQL Control";
-    },
-    oneditprepare: function() {
-      let node = this;
+    RED.nodes.registerType('MSSQL Control', {
+        category: 'Database',
+        color: '#88bb00',
+        defaults: {
+            name: { value: "" },
+            targetNodeId: { value: "" },
+            selectMode: { value: "auto" },
+            selectedNodes: { value: [] },
+            action: { value: "continue" },
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: 'db.png',
+        label: function () {
+            return this.name || "MSSQL Control";
+        },
+        oneditprepare: function () {
+            let node = this;
 
-      var scope = node.selectedNodes || [];
-      this._resize = function() {
-        var rows = $("#dialog-form>div:not(.node-input-target-list-row)");
-        var height = $("#dialog-form").height();
-        for (var i=0;i<rows.length;i++) {
-          height -= $(rows[i]).outerHeight(true);
-        }
-        var editorRow = $("#dialog-form>div.node-input-target-list-row");
-        editorRow.css("height",height+"px");
-      };
-      var search = $("#node-input-status-target-filter").searchBox({
-        style: "compact",
-        delay: 300,
-        change: function() {
-          var val = $(this).val().trim().toLowerCase();
-          if (val === "") {
-            dirList.treeList("filter", null);
-            search.searchBox("count","");
-          } else {
-            var count = dirList.treeList("filter", function(item) {
-              return item.label.toLowerCase().indexOf(val) > -1 || item.node.type.toLowerCase().indexOf(val) > -1
+            var scope = node.selectedNodes || [];
+            this._resize = function () {
+                var rows = $("#dialog-form>div:not(.node-input-target-list-row)");
+                var height = $("#dialog-form").height();
+                for (var i = 0; i < rows.length; i++) {
+                    height -= $(rows[i]).outerHeight(true);
+                }
+                var editorRow = $("#dialog-form>div.node-input-target-list-row");
+                editorRow.css("height", height + "px");
+            };
+            var search = $("#node-input-status-target-filter").searchBox({
+                style: "compact",
+                delay: 300,
+                change: function () {
+                    var val = $(this).val().trim().toLowerCase();
+                    if (val === "") {
+                        dirList.treeList("filter", null);
+                        search.searchBox("count", "");
+                    } else {
+                        var count = dirList.treeList("filter", function (item) {
+                            return item.label.toLowerCase().indexOf(val) > -1 || item.node.type.toLowerCase().indexOf(val) > -1
+                        });
+                        search.searchBox("count", count + " / " + candidateNodes.length);
+                    }
+                }
             });
-            search.searchBox("count",count+" / "+candidateNodes.length);
-          }
-        }
-      });
 
-      var dirList = $("#node-input-status-target-container-div").css({width: "100%", height: "100%"})
-        .treeList({multi:true}).on("treelistitemmouseover", function(e, item) {
-          item.node.highlighted = true;
-          item.node.dirty = true;
-          RED.view.redraw();
-        }).on("treelistitemmouseout", function(e, item) {
-          item.node.highlighted = false;
-          item.node.dirty = true;
-          RED.view.redraw();
-        })
-      var candidateNodes = RED.nodes.filterNodes({z:node.z, type: "MSSQL Execute"});
-      var allChecked = true;
-      var items = [];
-      var nodeItemMap = {};
+            var dirList = $("#node-input-status-target-container-div").css({ width: "100%", height: "100%" })
+                .treeList({ multi: true }).on("treelistitemmouseover", function (e, item) {
+                    item.node.highlighted = true;
+                    item.node.dirty = true;
+                    RED.view.redraw();
+                }).on("treelistitemmouseout", function (e, item) {
+                    item.node.highlighted = false;
+                    item.node.dirty = true;
+                    RED.view.redraw();
+                })
+            var candidateNodes = RED.nodes.filterNodes({ z: node.z, type: "MSSQL Execute" });
+            var allChecked = true;
+            var items = [];
+            var nodeItemMap = {};
 
-      candidateNodes.forEach(function(n) {
-        if (n.id === node.id) {
-          return;
-        }
-        var isChecked = scope.indexOf(n.id) !== -1;
+            candidateNodes.forEach(function (n) {
+                if (n.id === node.id) {
+                    return;
+                }
+                var isChecked = scope.indexOf(n.id) !== -1;
 
-        allChecked = allChecked && isChecked;
+                allChecked = allChecked && isChecked;
 
-        var nodeDef = RED.nodes.getType(n.type);
-        var label;
-        var sublabel;
-        if (nodeDef) {
-          var l = nodeDef.label;
-          label = (typeof l === "function" ? l.call(n) : l)||"";
-          sublabel = n.type;
-          if (sublabel.indexOf("subflow:") === 0) {
-            var subflowId = sublabel.substring(8);
-            var subflow = RED.nodes.subflow(subflowId);
-            sublabel = "subflow : "+subflow.name;
-          }
-        }
-        if (!nodeDef || !label) {
-          label = n.type;
-        }
-        nodeItemMap[n.id] = {
-          node: n,
-          label: label,
-          sublabel: sublabel,
-          selected: isChecked,
-          checkbox: true
-        };
-        items.push(nodeItemMap[n.id]);
-      });
-      dirList.treeList('data',items);
+                var nodeDef = RED.nodes.getType(n.type);
+                var label;
+                var sublabel;
+                if (nodeDef) {
+                    var l = nodeDef.label;
+                    label = (typeof l === "function" ? l.call(n) : l) || "";
+                    sublabel = n.type;
+                    if (sublabel.indexOf("subflow:") === 0) {
+                        var subflowId = sublabel.substring(8);
+                        var subflow = RED.nodes.subflow(subflowId);
+                        sublabel = "subflow : " + subflow.name;
+                    }
+                }
+                if (!nodeDef || !label) {
+                    label = n.type;
+                }
+                nodeItemMap[n.id] = {
+                    node: n,
+                    label: label,
+                    sublabel: sublabel,
+                    selected: isChecked,
+                    checkbox: true
+                };
+                items.push(nodeItemMap[n.id]);
+            });
+            dirList.treeList('data', items);
 
-      $("#node-input-targetNodes-select").on("click", function(e) {
-        e.preventDefault();
-        var preselected = dirList.treeList('selected').map(function(n) {return n.node.id});
-        RED.tray.hide();
-        RED.view.selectNodes({
-          selected: preselected,
-          onselect: function(selection) {
-            RED.tray.show();
-            var newlySelected = {};
-            selection.forEach(function(n) {
-              newlySelected[n.id] = true;
-              if (nodeItemMap[n.id]) {
-                nodeItemMap[n.id].treeList.select(true);
-              }
-            })
-            preselected.forEach(function(id) {
-              if (!newlySelected[id]) {
-                nodeItemMap[id].treeList.select(false);
-              }
-            })
-          },
-          oncancel: function() {
-            RED.tray.show();
-          },
-          filter: function(n) {
+            $("#node-input-targetNodes-select").on("click", function (e) {
+                e.preventDefault();
+                var preselected = dirList.treeList('selected').map(function (n) { return n.node.id });
+                RED.tray.hide();
+                RED.view.selectNodes({
+                    selected: preselected,
+                    onselect: function (selection) {
+                        RED.tray.show();
+                        var newlySelected = {};
+                        selection.forEach(function (n) {
+                            newlySelected[n.id] = true;
+                            if (nodeItemMap[n.id]) {
+                                nodeItemMap[n.id].treeList.select(true);
+                            }
+                        })
+                        preselected.forEach(function (id) {
+                            if (!newlySelected[id]) {
+                                nodeItemMap[id].treeList.select(false);
+                            }
+                        })
+                    },
+                    oncancel: function () {
+                        RED.tray.show();
+                    },
+                    filter: function (n) {
 
-            if (n.type === "MSSQL Execute" && n.id !== node.id) {
-              return true;
+                        if (n.type === "MSSQL Execute" && n.id !== node.id) {
+                            return true;
+                        }
+
+                        return false;
+                    }
+                });
+            });
+
+            $("#node-input-selectMode").on("change", function (e) {
+                var selectMode = $(this).val();
+                if (selectMode === "specific") {
+                    $(".node-input-target-row").show();
+                } else {
+                    $(".node-input-target-row").hide();
+                }
+                node._resize();
+            });
+
+            switch (this.selectMode) {
+                case 'specific':
+                    $("#node-input-selectMode").val("specific");
+                    break;
+                default:
+                    $("#node-input-selectMode").val("auto");
             }
 
-            return false;
-          }
-        });
-      });
-
-      $("#node-input-selectMode").on("change", function(e) {
-        var selectMode = $(this).val();
-        if (selectMode === "specific") {
-          $(".node-input-target-row").show();
-        } else {
-          $(".node-input-target-row").hide();
+            $("#node-input-selectMode").trigger("change");
+        },
+        oneditsave: function () {
+            var selectMode = $("#node-input-selectMode").val();
+            switch (selectMode) {
+                case 'specific':
+                    this.selectedNodes = $("#node-input-status-target-container-div").treeList('selected').map(function (i) {
+                        return i.node.id;
+                    })
+                    break;
+                default:
+                    this.selectedNodes = [];
+            }
+        },
+        oneditresize: function (size) {
+            this._resize();
         }
-        node._resize();
-      });
-
-      switch(this.selectMode) {
-      case 'specific':
-        $("#node-input-selectMode").val("specific");
-        break;
-      default:
-        $("#node-input-selectMode").val("auto");
-      }
-
-      $("#node-input-selectMode").trigger("change");
-    },
-    oneditsave: function() {
-      var selectMode = $("#node-input-selectMode").val();
-      switch(selectMode) {
-      case 'specific':
-        this.selectedNodes = $("#node-input-status-target-container-div").treeList('selected').map(function(i) {
-          return i.node.id;
-        })
-        break;
-      default:
-        this.selectedNodes = [];
-      }
-    },
-    oneditresize: function(size) {
-      this._resize();
-    }
-  });
+    });
 </script>
 
 <script type="text/x-red" data-template-name="MSSQL Control">
@@ -197,22 +197,21 @@
 </script>
 
 <script type="text/html" data-help-name="MSSQL Control">
-  <p>The MSSQL Control node is a powerful tool for managing the flow of data from MS-SQL Execute nodes. It allows you to pause and resume the processing of large datasets in a controlled manner, optimizing performance and reducing memory consumption.</p>
+    <p>The MSSQL Control node is a powerful tool for managing the flow of data from MS-SQL Execute nodes. It allows you to pause and resume the processing of large datasets in a controlled manner, optimizing performance and reducing memory consumption.</p>
 
-  <p>It is particularly useful when the <code>"Delivery Mode"</code> is set to <code>"streaming"</code> in the MS-SQL Execute node. The control node interacts with the Execute node to manage the flow of data.</p>
+    <p>It is particularly useful when the <code>"Delivery Mode"</code> is set to <code>"streaming"</code> in the MS-SQL Execute node. The control node interacts with the Execute node to manage the flow of data.</p>
 
-  <h3>Actions</h3>
-  <p>To use this node, you need to specify the target Execute node and the action you want to perform, then select action to control data flow. The available actions are <code>"continue"</code> and <code>"break"</code>. The <code>"continue"</code> action resumes the processing of the paused stream, while the "break" action stops the processing.</p>
+    <h3>Actions</h3>
+    <p>To use this node, you need to specify the target Execute node and the action you want to perform, then select action to control data flow. The available actions are <code>"continue"</code> and <code>"break"</code>. The <code>"continue"</code> action resumes the processing of the paused stream, while the "break" action stops the processing.</p>
 
-<ul>
-  <li>
-    <h4>continue</h4>
-    <p>When the <code>"continue"</code> action is selected, you can also specify the session ID (<code>msg.sessionId</code>) of the paused session. This allows you to control multiple sessions independently.</p>
-  </li>
-  <li>
-    <h4>break</h4>
-
-    <p>When the <code>"break"</code> action is selected, the Control node will stop processing the session and release any resources associated with it. This is useful when you want to stop processing a stream of the session that is no longer needed.</p>
-  </li>
-</ul>
+    <ul>
+        <li>
+            <h4>continue</h4>
+            <p>When the <code>"continue"</code> action is selected, you can also specify the session ID (<code>msg.sessionId</code>) of the paused session. This allows you to control multiple sessions independently.</p>
+        </li>
+        <li>
+            <h4>break</h4>
+            <p>When the <code>"break"</code> action is selected, the Control node will stop processing the session and release any resources associated with it. This is useful when you want to stop processing a stream of the session that is no longer needed.</p>
+        </li>
+    </ul>
 </script>

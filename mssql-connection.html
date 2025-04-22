@@ -1,76 +1,84 @@
 <script type="text/javascript">
-  RED.nodes.registerType('MSSQL Connection',{
-    category: 'config',
-    credentials: {
-      username: {
-        type: 'text'
-      },
-      password: {
-        type: 'password'
-      },
-    },
-    defaults: {
-      name: {
-        value: '',
-      },
-      server: {
-        value: 'localhost',
-        required: true
-      },
-      port: {
-        value: 1433,
-        required: true,
-        validate: RED.validators.number()
-      },
-      authType: {
-        value: 'default',
-      },
-      domain: {
-        value: '',
-      },
-      database: {
-        value: '',
-        required: true
-      },
-      appName: {
-        value: 'atomic',
-        required: true
-      },
-      poolMin: {
-        value: 1,
-        required: true
-      },
-      poolMax: {
-        value: 10,
-        required: true
-      },
-      poolIdleTimeoutMillis: {
-        value: 30000,
-        required: true
-      },
-      requestTimeout: {
-        value: 15000,
-        required: true
-      },
-      connectionTimeout: {
-        value: 15000,
-        required: true
-      },
-      connectionRetryInterval: {
-        value: 3000,
-        required: true
-      }
-    },
-    label: function() {
-      return this.name || this.server + ':' + this.port + ' - ' + this.database;
-    },
-    oneditprepare: function() {
-      $('#node-config-input-requestTimeout').val(this.requestTimeout || 15000);
-      $('#node-config-input-connectionTimeout').val(this.connectionTimeout || 15000);
-      $('#node-config-input-poolIdleTimeoutMillis').val(this.poolIdleTimeoutMillis || 30000);
-      $('#node-config-input-connectionRetryInterval').val(this.connectionRetryInterval || 3000);
-    }
-  });
+    RED.nodes.registerType('MSSQL Connection', {
+        category: 'config',
+        credentials: {
+            username: {
+                type: 'text'
+            },
+            password: {
+                type: 'password'
+            },
+        },
+        defaults: {
+            name: {
+                value: '',
+            },
+            server: {
+                value: 'localhost',
+                required: true
+            },
+            port: {
+                value: 1433,
+                required: true,
+                validate: RED.validators.number()
+            },
+            authType: {
+                value: 'default',
+            },
+            domain: {
+                value: '',
+            },
+            database: {
+                value: '',
+                required: true
+            },
+            appName: {
+                value: 'atomic',
+                required: true
+            },
+            encryption: {
+                value: true,
+                required: true
+            },
+            trustServerCertificate: {
+                value: true,
+                required: true
+            },
+            poolMin: {
+                value: 1,
+                required: true
+            },
+            poolMax: {
+                value: 10,
+                required: true
+            },
+            poolIdleTimeoutMillis: {
+                value: 30000,
+                required: true
+            },
+            requestTimeout: {
+                value: 15000,
+                required: true
+            },
+            connectionTimeout: {
+                value: 15000,
+                required: true
+            },
+            connectionRetryInterval: {
+                value: 3000,
+                required: true
+            }
+        },
+        label: function () {
+            return this.name || this.server + ':' + this.port + ' - ' + this.database;
+        },
+        oneditprepare: function () {
+            $('#node-config-input-requestTimeout').val(this.requestTimeout || 15000);
+            $('#node-config-input-connectionTimeout').val(this.connectionTimeout || 15000);
+            $('#node-config-input-poolIdleTimeoutMillis').val(this.poolIdleTimeoutMillis || 30000);
+            $('#node-config-input-connectionRetryInterval').val(this.connectionRetryInterval || 3000);
+        }
+    });
 </script>
 
 <script type="text/x-red" data-template-name="MSSQL Connection">
@@ -86,11 +94,11 @@
         <label for="node-config-input-port" style="width: 130px"><i class="fa fa-random"></i> Port</label>
         <input type="text" id="node-config-input-port">
     </div>
-	<div class="form-row">
+    <div class="form-row">
         <label for="node-config-input-authType" style="width: 130px"><i class="fa fa-certificate"></i> Authentication</label>
-		<select id="node-config-input-authType">
-			<option value="default">Default</option>
-		</select>
+        <select id="node-config-input-authType">
+            <option value="default">Default</option>
+        </select>
     </div>
     <div class="form-row">
         <label for="node-config-input-username" style="width: 130px"><i class="fa fa-user"></i> Username</label>
@@ -112,40 +120,81 @@
         <label for="node-config-input-appName" style="width: 130px"><i class="fa fa-rocket"></i> App Name</label>
         <input type="text" id="node-config-input-appName">
     </div>
-	<hr />
-	<div class="form-row">
-		<label for="node-row-pool" style="width: 200px;font-weight: bold;">Connection Pool Options</label>
-		<div id="node-row-pool" style="margin-left: 30px; margin-top: 10px;">
-			<div class="form-row">
-				<label for="node-config-input-poolMin">Min Size</label>
-				<input type="number" id="node-config-input-poolMin" style="width:100px">
-			</div>
-			<div class="form-row">
-				<label for="node-config-input-poolMax">Max Size</label>
-				<input type="number" id="node-config-input-poolMax" style="width:100px">
-			</div>
-			<div class="form-row">
-				<label for="node-config-input-poolIdleTimeoutMillis">Idle Timeout</label>
-				<input type="number" id="node-config-input-poolIdleTimeoutMillis" style="width:100px"> ms
-			</div>
-		</div>
-	</div>
-	<hr />
-	<div class="form-row">
-		<label for="node-row-options" style="width: 200px;font-weight: bold;"">Connection Options</label>
-		<div id="node-row-options" style="margin-left: 30px; margin-top: 10px;">
-			<div class="form-row">
-				<label for="node-config-input-connectionTimeout" style="width: 150px;">Connection Timeout</label>
-				<input type="number" id="node-config-input-connectionTimeout" style="width:100px"> ms
-			</div>
-			<div class="form-row">
-				<label for="node-config-input-requestTimeout" style="width: 150px;">Request Timeout</label>
-				<input type="number" id="node-config-input-requestTimeout" style="width:100px"> ms
-			</div>
-			<div class="form-row">
-				<label for="node-config-input-connectionRetryInterval" style="width: 150px;">Reconnect Intervals</label>
-				<input type="number" id="node-config-input-connectionRetryInterval" style="width:100px"> ms
-			</div>
-		</div>
-	</div>
+    <div class="form-row">
+        <input type="checkbox" id="node-config-input-encryption" style="display: inline-block; width: auto; vertical-align: top;" autocomplete="off">
+        <label for="node-config-input-encryption" style="width: auto;">Use encryption</label>
+    </div>
+    <div class="form-row">
+        <input type="checkbox" id="node-config-input-trustServerCertificate" style="display: inline-block; width: auto; vertical-align: top;" autocomplete="off">
+        <label for="node-config-input-trustServerCertificate" style="width: auto;">Trust Certificate</label>
+    </div>
+    <hr />
+    <div class="form-row">
+        <label for="node-row-pool" style="width: 200px;font-weight: bold;">Connection Pool Options</label>
+        <div id="node-row-pool" style="margin-left: 30px; margin-top: 10px;">
+            <div class="form-row">
+                <label for="node-config-input-poolMin">Min Size</label>
+                <input type="number" id="node-config-input-poolMin" style="width:100px">
+            </div>
+            <div class="form-row">
+                <label for="node-config-input-poolMax">Max Size</label>
+                <input type="number" id="node-config-input-poolMax" style="width:100px">
+            </div>
+            <div class="form-row">
+                <label for="node-config-input-poolIdleTimeoutMillis">Idle Timeout</label>
+                <input type="number" id="node-config-input-poolIdleTimeoutMillis" style="width:100px"> ms
+            </div>
+        </div>
+    </div>
+    <hr />
+    <div class="form-row">
+        <label for="node-row-options" style="width: 200px;font-weight: bold;"">Connection Options</label>
+        <div id="node-row-options" style="margin-left: 30px; margin-top: 10px;">
+            <div class="form-row">
+                <label for="node-config-input-connectionTimeout" style="width: 150px;">Connection Timeout</label>
+                <input type="number" id="node-config-input-connectionTimeout" style="width:100px"> ms
+            </div>
+            <div class="form-row">
+                <label for="node-config-input-requestTimeout" style="width: 150px;">Request Timeout</label>
+                <input type="number" id="node-config-input-requestTimeout" style="width:100px"> ms
+            </div>
+            <div class="form-row">
+                <label for="node-config-input-connectionRetryInterval" style="width: 150px;">Reconnect Intervals</label>
+                <input type="number" id="node-config-input-connectionRetryInterval" style="width:100px"> ms
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="MSSQL Connection">
+    <p>The <b>MSSQL Connection</b> node lets you define a reusable Microsoft SQL Server connection.</p>
+    
+    <h3>Basic Settings</h3>
+    <ul>
+        <li><b>Server / Port</b> – target SQL Server host.</li>
+        <li><b>Authentication</b> – username / password (or other auth types if added).</li>
+        <li><b>Database</b> – default database for the session.</li>
+        <li><b>App Name</b> – name reported in SQL Server logs.</li>
+    </ul>
+
+    <h3>TLS &amp; Security</h3>
+    <ul>
+        <li><b>Encrypt</b> – enables TLS encryption (sets <code>encrypt=true</code>).</li>
+        <li><b>Trust Server Certificate</b> – when <em>Encrypt</em> is on, set to
+            <code>true</code> to accept self‑signed certificates or
+            <code>false</code> to enforce CA validation.</li>
+    </ul>
+
+    <h3>Connection Options</h3>
+    <ul>
+        <li><b>Connection Timeout</b> – ms to wait for the initial handshake.</li>
+        <li><b>Request Timeout</b> – ms to wait for a query result.</li>
+        <li><b>Reconnect Interval</b> – delay before automatic reconnect.</li>
+    </ul>
+
+    <h3>Pool Settings</h3>
+    <ul>
+        <li><b>Min / Max Size</b> – concurrent connections in the pool.</li>
+        <li><b>Idle Timeout</b> – ms before an unused connection is closed.</li>
+    </ul>
 </script>

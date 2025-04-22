@@ -12,7 +12,7 @@ module.exports = function (RED) {
         this.client = null;
         this.dependencies = 0;
         this.status = 'disconnected';
-
+        
         // Options
         this.connConfig = {
             server: n.server,
@@ -23,6 +23,8 @@ module.exports = function (RED) {
             connectionTimeout: Number(n.connectionTimeout) || 15000,
             requestTimeout: Number(n.requestTimeout) || 15000,
             connectionRetryInterval: Number(n.connectionRetryInterval) || 3000,
+            encryption: n.encryption || false,
+            trustServerCertificate: n.trustServerCertificate || false,
             auth: {
                 type: n.authType || 'default',
                 username: this.credentials.username || 'sa',
